@@ -445,11 +445,96 @@ body {
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .puesto-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Estado Recogido / Plegado */
+.puesto-card.collapsed .slots-container {
+  display: none !important;
+}
+
+.puesto-card.collapsed {
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.puesto-card.collapsed:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+.puesto-card.collapsed .instrument-panel {
+  border-bottom: none;
+}
+
+/* Barra resumen de bahías en estado recogido */
+.puesto-summary-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.2s ease;
+}
+
+.bay-mini-pill {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  transition: border-color 0.2s;
+}
+
+.bay-mini-pill.libre {
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+.bay-mini-pill.en_uso_disponible {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.bay-mini-pill.no_tocar {
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.15);
+  font-weight: 600;
+}
+
+.btn-collapse-toggle {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.btn-collapse-toggle:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
 }
 
 /* Panel de Instrumentación Superior (Como en la foto real) */
