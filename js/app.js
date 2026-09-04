@@ -550,9 +550,10 @@ async function toggleDataloggerDirectly(slotId, isChecked) {
 /* Modales y Edición */
 function openEditModal(slotId) {
   currentEditSlotId = slotId;
+  const parsed = Store._parseSlotId(slotId, {});
   const slotData = (Store.data.slots && Store.data.slots[slotId]) || {
-    puesto: slotId[0],
-    slot: parseInt(slotId.substring(1), 10),
+    puesto: parsed.puesto,
+    slot: parsed.slot,
     estado: "libre"
   };
 
@@ -628,8 +629,10 @@ async function handleImageFile(file) {
 async function saveSlotForm() {
   if (!currentEditSlotId) return;
 
-  const puesto = currentEditSlotId[0];
-  const slot = parseInt(currentEditSlotId.substring(1), 10);
+  const targetSlotId = currentEditSlotId;
+  const parsed = Store._parseSlotId(targetSlotId, {});
+  const puesto = parsed.puesto;
+  const slot = parsed.slot;
 
   // Obtener estado seleccionado
   let estado = "libre";
@@ -646,7 +649,7 @@ async function saveSlotForm() {
   }
 
   const slotData = {
-    slot_id: currentEditSlotId,
+    slot_id: targetSlotId,
     puesto,
     slot,
     estado,
@@ -665,15 +668,15 @@ async function saveSlotForm() {
   };
 
   closeEditModal();
-  showToast(`Guardando ${currentEditSlotId}...`, "info");
+  showToast(`Guardando ${targetSlotId}...`, "info");
 
   const syncResult = await Store.updateSlot(slotData);
   if (syncResult && syncResult.github) {
-    showToast(`✅ ${currentEditSlotId} sincronizado en GitHub`, "success");
+    showToast(`✅ ${targetSlotId} sincronizado en GitHub`, "success");
   } else if (syncResult && syncResult.localOnly) {
-    showToast(`💾 ${currentEditSlotId} guardado localmente (Añade token en ⚙️ para GitHub)`, "info");
+    showToast(`💾 ${targetSlotId} guardado localmente`, "info");
   } else {
-    showToast(`${currentEditSlotId} actualizado`, "success");
+    showToast(`✅ ${targetSlotId} actualizado`, "success");
   }
 }
 
