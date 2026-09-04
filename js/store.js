@@ -5,11 +5,11 @@
 
 const Store = {
   data: {
-    version: "1.2.0",
+    version: "2.0.0",
     plantas: [
       {
-        id: "cabina",
-        nombre: "Planta Cabina",
+        id: "zona1",
+        nombre: "Zona 1: Cabinas Test",
         icono: "⚡",
         puestos: [
           { id: "A", nombre: "Puesto A", slotsCount: 4 },
@@ -25,18 +25,55 @@ const Store = {
         ]
       },
       {
-        id: "piloto",
-        nombre: "Planta Piloto Laboratorio",
+        id: "zona2",
+        nombre: "Zona 2: Planta Piloto Cabina test",
+        icono: "🧪",
+        puestos: [
+          { id: "PCAB", nombre: "Piloto Cabina Test", slotsCount: 4 }
+        ]
+      },
+      {
+        id: "zona3",
+        nombre: "Zona 3: Planta piloto Laboratorio",
         icono: "🔬",
         puestos: [
-          { id: "CG1", nombre: "Planta Piloto Cellguard 1", slotsCount: 4 },
-          { id: "CG2", nombre: "Planta Piloto Cellguard 2", slotsCount: 4 },
-          { id: "EC1", nombre: "Planta Piloto EC (Golpes ariete) 1", slotsCount: 4 },
-          { id: "EC2", nombre: "Planta Piloto EC (Golpes ariete) 2", slotsCount: 4 }
+          { id: "PLAB", nombre: "Piloto Laboratorio", slotsCount: 4 }
+        ]
+      },
+      {
+        id: "zona4",
+        nombre: "Zona 4: Planta Piloto Cellguard 1",
+        icono: "🔋",
+        puestos: [
+          { id: "CG1", nombre: "Planta Piloto Cellguard 1", slotsCount: 5 }
+        ]
+      },
+      {
+        id: "zona5",
+        nombre: "Zona 5: Planta Piloto Cellguard 2",
+        icono: "🔋",
+        puestos: [
+          { id: "CG2", nombre: "Planta Piloto Cellguard 2", slotsCount: 5 }
+        ]
+      },
+      {
+        id: "zona6",
+        nombre: "Zona 6: Planta Piloto EC (Golpes Ariete 1)",
+        icono: "🌊",
+        puestos: [
+          { id: "EC1", nombre: "Planta Piloto EC (Golpes Ariete 1)", slotsCount: 4 }
+        ]
+      },
+      {
+        id: "zona7",
+        nombre: "Zona 7: Planta Piloto EC (Golpes Ariete 2)",
+        icono: "🌊",
+        puestos: [
+          { id: "EC2", nombre: "Planta Piloto EC (Golpes Ariete 2)", slotsCount: 4 }
         ]
       }
     ],
-    puestos: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "CG1", "CG2", "EC1", "EC2"],
+    puestos: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "PCAB", "PLAB", "CG1", "CG2", "EC1", "EC2"],
     slots: {},
     historico: []
   },
@@ -57,7 +94,7 @@ const Store = {
       const p = pl.puestos.find(item => item.id === puestoId);
       if (p) return { ...p, plantaId: pl.id, plantaNombre: pl.nombre, plantaIcono: pl.icono };
     }
-    return { id: puestoId, nombre: `Puesto ${puestoId}`, slotsCount: 4, plantaId: "cabina", plantaNombre: "Planta Cabina", plantaIcono: "⚡" };
+    return { id: puestoId, nombre: `Puesto ${puestoId}`, slotsCount: 4, plantaId: "zona1", plantaNombre: "Zona 1: Cabinas Test", plantaIcono: "⚡" };
   },
 
   async updatePuestosConfig(updatedPlantas) {
@@ -65,7 +102,29 @@ const Store = {
     this.data.puestos = [].concat(...updatedPlantas.map(pl => pl.puestos.map(p => p.id)));
     localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
     this.notify();
-    return await this.saveToGitHub("Actualizar nombres y configuración de puestos");
+    return await this.saveToGitHub("Actualizar nombres de zonas y puestos");
+  },
+
+  async updateZonaNombre(zonaId, nuevoNombre) {
+    const pl = (this.data.plantas || []).find(z => z.id === zonaId);
+    if (pl) {
+      pl.nombre = nuevoNombre;
+      localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+      this.notify();
+      return await this.saveToGitHub(`Renombrar ${zonaId} a ${nuevoNombre}`);
+    }
+  },
+
+  async updatePuestoNombre(puestoId, nuevoNombre) {
+    for (const pl of (this.data.plantas || [])) {
+      const p = pl.puestos.find(item => item.id === puestoId);
+      if (p) {
+        p.nombre = nuevoNombre;
+        localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+        this.notify();
+        return await this.saveToGitHub(`Renombrar puesto ${puestoId} a ${nuevoNombre}`);
+      }
+    }
   },
 
   githubConfig: {
@@ -91,7 +150,7 @@ const Store = {
   },
 
   async init() {
-    // 1. Cargar desde caché local de inmediato con migración automática
+    // 1. Cargar desde caché local de inmediato con auto-migración a 7 Zonas
     const cached = localStorage.getItem("cabina_equipos_db");
     if (cached) {
       try {
@@ -99,18 +158,18 @@ const Store = {
         const defaultPlantas = this.data.plantas;
         const defaultPuestos = this.data.puestos;
 
-        // Si el caché local tiene menos de 2 plantas o faltan los nuevos puestos (G-J, CG, EC)
-        if (!parsed.plantas || !Array.isArray(parsed.plantas) || parsed.plantas.length < 2 || !parsed.puestos || parsed.puestos.length < 14) {
-          console.log("Migrando caché local a versión 1.2.0 multi-planta...");
+        // Si el caché local tiene menos de 7 zonas o versión antigua
+        if (!parsed.plantas || !Array.isArray(parsed.plantas) || parsed.plantas.length < 7) {
+          console.log("Migrando caché local a versión 2.0.0 (7 Zonas completas)...");
           parsed.plantas = defaultPlantas;
           parsed.puestos = defaultPuestos;
-          parsed.version = "1.2.0";
+          parsed.version = "2.0.0";
           if (!parsed.slots) parsed.slots = {};
 
           defaultPlantas.forEach(pl => {
             pl.puestos.forEach(p => {
               for (let s = 1; s <= (p.slotsCount || 4); s++) {
-                const sId = (pl.id === "cabina") ? `${p.id}${s}` : `${p.id}_${s}`;
+                const sId = (p.id.length === 1) ? `${p.id}${s}` : `${p.id}_${s}`;
                 if (!parsed.slots[sId]) {
                   parsed.slots[sId] = {
                     puesto: p.id,
