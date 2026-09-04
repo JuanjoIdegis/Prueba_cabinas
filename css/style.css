@@ -268,7 +268,8 @@ body {
 .zone-bar-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
   flex-wrap: nowrap;
 }
@@ -276,30 +277,33 @@ body {
 .zone-dropdown-box {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
+  gap: 0.6rem;
+  flex: 1;
 }
 
 .zone-select-label {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: var(--accent-cyan);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .zone-select-dropdown {
-  background: rgba(11, 15, 25, 0.9);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(11, 15, 25, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.45);
   color: #fff;
   border-radius: var(--radius-md);
-  padding: 0.35rem 0.7rem;
-  font-size: 0.82rem;
-  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 700;
   outline: none;
   cursor: pointer;
-  max-width: 250px;
+  min-width: 320px;
+  max-width: 480px;
   font-family: var(--font-sans);
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .zone-select-dropdown:focus {
@@ -501,12 +505,35 @@ body {
 
 .puestos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(680px, 1fr));
-  gap: 1.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Vista compacta general: cuando los puestos están plegados para visión global de planta */
+.puestos-grid.mode-compact-view {
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+
+/* Si en vista compacta el usuario despliega un puesto individual para trabajar en él,
+   este se expande a lo ancho completo como mesa de trabajo destacada,
+   evitando que los puestos vecinos queden deformados o con huecos asimétricos */
+.puestos-grid.mode-compact-view .puesto-card:not(.collapsed) {
+  grid-column: 1 / -1;
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+  background: rgba(17, 24, 39, 0.95);
+}
+
+.puestos-grid.mode-compact-view .puesto-card:not(.collapsed) .slots-container {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 @media (max-width: 768px) {
-  .puestos-grid {
+  .puestos-grid,
+  .puestos-grid.mode-compact-view {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
@@ -522,6 +549,9 @@ body {
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
+  align-self: start;
+  height: auto;
+  min-height: 0;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -537,6 +567,9 @@ body {
 .puesto-card.collapsed {
   box-shadow: var(--shadow-sm);
   border-color: rgba(255, 255, 255, 0.08);
+  align-self: start;
+  height: auto;
+  min-height: 0;
 }
 
 .puesto-card.collapsed:hover {
@@ -547,6 +580,11 @@ body {
 
 .puesto-card.collapsed .instrument-panel {
   border-bottom: none;
+}
+
+/* La tira de resumen de bahías solo se muestra cuando el puesto está recogido */
+.puesto-card:not(.collapsed) .puesto-summary-strip {
+  display: none;
 }
 
 /* Barra resumen de bahías en estado recogido */
