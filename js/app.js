@@ -20,6 +20,23 @@ let searchQuery = "";
 let currentEditSlotId = null;
 let currentTempImageData = null;
 
+function reloadApp() {
+  const brandIcon = document.querySelector(".brand-icon");
+  if (brandIcon) {
+    brandIcon.style.transform = "rotate(360deg)";
+  }
+  showToast("🔄 Recargando aplicación...", "info");
+
+  setTimeout(() => {
+    // Si la URL tenía parámetros (?puesto=F, etc.), volver a la raíz limpia y recargar
+    if (window.location.search || window.location.hash) {
+      window.location.href = window.location.pathname;
+    } else {
+      window.location.reload();
+    }
+  }, 200);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Inicializar store de datos
   await Store.init();
@@ -35,6 +52,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Render inicial
   renderApp();
   setupEventListeners();
+
+  // Listener en la cabecera completa para recargar si no se pulsa un botón
+  const header = document.getElementById("app-main-header");
+  if (header) {
+    header.addEventListener("click", (e) => {
+      if (e.target.closest("button, a, input, select, .metrics-bar, .metric-tag")) {
+        return;
+      }
+      reloadApp();
+    });
+  }
+
   setupPWA();
 });
 
