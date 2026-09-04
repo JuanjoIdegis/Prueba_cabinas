@@ -40,6 +40,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
+
+  // Soporte para autorizar un móvil vía QR de autorización (?auth=...)
+  const auth = urlParams.get("auth") || urlParams.get("token");
+  if (auth) {
+    Store.setGitHubToken(auth);
+    showToast("✅ Dispositivo autorizado con permisos de sincronización Cloud", "success");
+    urlParams.delete("auth");
+    urlParams.delete("token");
+    const cleanSearch = urlParams.toString() ? `?${urlParams.toString()}` : "";
+    window.history.replaceState({}, document.title, window.location.pathname + cleanSearch + window.location.hash);
+  }
+
   let puesto = urlParams.get("puesto");
   let slot = urlParams.get("slot");
 
@@ -714,13 +726,20 @@ function openMobileConnectModal() {
     url = Store.networkInfo.network_url;
   }
 
+  // Incluir token de autorización para que el móvil se autorice automáticamente con 1 solo escaneo
+  const token = Store.githubConfig.token;
+  let qrUrl = url;
+  if (token && window.location.hostname.includes("github.io")) {
+    qrUrl = `${url}?auth=${encodeURIComponent(token)}`;
+  }
+
   const urlEl = document.getElementById("mobile-url-text");
   if (urlEl) urlEl.textContent = url;
 
   const badgeEl = document.getElementById("mobile-ip-badge");
   if (badgeEl) {
     if (window.location.hostname.includes("github.io")) {
-      badgeEl.textContent = "🌐 Acceso Cloud GitHub Pages";
+      badgeEl.textContent = "🌐 Acceso Cloud GitHub Pages (Autorización Rápida)";
     } else {
       badgeEl.textContent = `Host: ${window.location.hostname}`;
     }
@@ -731,7 +750,7 @@ function openMobileConnectModal() {
     qrContainer.innerHTML = "";
     if (typeof QRCode !== "undefined") {
       new QRCode(qrContainer, {
-        text: url,
+        text: qrUrl,
         width: 220,
         height: 220,
         colorDark: "#0f172a",
