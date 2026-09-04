@@ -132,7 +132,13 @@ const Store = {
     repo: "Prueba_cabinas",
     branch: "main",
     filePath: "database.json",
-    token: localStorage.getItem("github_token") || ""
+    get token() {
+      return localStorage.getItem("github_token") || "";
+    },
+    set token(val) {
+      if (val) localStorage.setItem("github_token", val);
+      else localStorage.removeItem("github_token");
+    }
   },
 
   githubSha: null,
@@ -782,6 +788,38 @@ const Store = {
         this.isGitHubConnected = true;
         this.lastSyncTime = new Date();
         return { success: true, github: true };
+      } else if (putRes.status === 409) {
+        // Conflicto de versión (SHA desfasado por edición desde otro dispositivo): refrescar SHA y reintentar
+        console.warn("SHA desfasado al guardar en GitHub. Obteniendo último SHA remoto...");
+        const refreshUrl = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`;
+        const refreshRes = await fetch(refreshUrl, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          }
+        });
+        if (refreshRes.ok) {
+          const refreshJson = await refreshRes.json();
+          this.githubSha = refreshJson.sha;
+          payload.sha = this.githubSha;
+          const retryRes = await fetch(putUrl, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+          if (retryRes.ok) {
+            const retryJson = await retryRes.json();
+            this.githubSha = retryJson.content ? retryJson.content.sha : null;
+            this.isGitHubConnected = true;
+            this.lastSyncTime = new Date();
+            return { success: true, github: true };
+          }
+        }
+        return { success: false, error: "Conflicto de versión al guardar en GitHub" };
       } else {
         const errJson = await putRes.json().catch(() => ({}));
         console.error("Error GitHub API:", errJson);
@@ -794,9 +832,9 @@ const Store = {
   },
 
   setGitHubToken(token) {
-    this.githubConfig.token = (token || "").trim();
-    if (this.githubConfig.token) {
-      localStorage.setItem("github_token", this.githubConfig.token);
+    const trimmed = (token || "").trim();
+    if (trimmed) {
+      localStorage.setItem("github_token", trimmed);
     } else {
       localStorage.removeItem("github_token");
     }
