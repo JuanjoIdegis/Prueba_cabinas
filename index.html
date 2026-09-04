@@ -9,14 +9,14 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=2.4.5" />
+  <link rel="stylesheet" href="css/style.css?v=2.4.6" />
 </head>
 <body>
 
   <!-- Encabezado Principal -->
-  <header class="app-header">
+  <header class="app-header" id="app-main-header">
     <div class="header-container">
-      <div class="brand">
+      <div class="brand" onclick="reloadApp()" title="🔄 Clic para recargar la aplicación y refrescar datos">
         <div class="brand-icon">⚡</div>
         <div class="brand-info">
           <h1>CABINA DE PRUEBAS <span class="badge-pill">FLUIDRA LAB</span></h1>
@@ -551,10 +551,10 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=2.4.5"></script>
-  <script src="js/store.js?v=2.4.5"></script>
-  <script src="js/qr-scanner.js?v=2.4.5"></script>
-  <script src="js/qr-generator.js?v=2.4.5"></script>
-  <script src="js/app.js?v=2.4.5"></script>
+  <script src="js/qrcode.min.js?v=2.4.6"></script>
+  <script src="js/store.js?v=2.4.6"></script>
+  <script src="js/qr-scanner.js?v=2.4.6"></script>
+  <script src="js/qr-generator.js?v=2.4.6"></script>
+  <script src="js/app.js?v=2.4.6"></script>
 </body>
 </html>
