@@ -232,6 +232,10 @@ function renderPuestos() {
   attachCardEvents();
 }
 
+let explicitlyExpandedPuestos = new Set();
+let explicitlyCollapsedPuestos = new Set();
+let areAllCollapsed = true; // Por defecto vista limpia y recogida
+
 function renderPuestoCard(puestoId) {
   const pInfo = Store.getPuestoInfo(puestoId);
   const slots = Store.data.slots || {};
@@ -239,13 +243,29 @@ function renderPuestoCard(puestoId) {
 
   let hasMatchingSlots = false;
   const slotCardsHtml = [];
+  const baySummaries = [];
+  let libresCount = 0;
+  let enUsoCount = 0;
+  let noTocarCount = 0;
 
   for (let slotNum = 1; slotNum <= slotsCount; slotNum++) {
     const slotId = pInfo.id.length > 2 || pInfo.id.includes('_') ? `${pInfo.id}_${slotNum}` : `${pInfo.id}${slotNum}`;
     const slotData = slots[slotId] || { puesto: pInfo.id, slot: slotNum, estado: "libre" };
+    const estado = slotData.estado || "libre";
+
+    if (estado === "libre") libresCount++;
+    else if (estado === "en_uso_disponible") enUsoCount++;
+    else if (estado === "no_tocar") noTocarCount++;
+
+    baySummaries.push({
+      slotId,
+      slotNum,
+      estado,
+      equipo: slotData.equipo || "",
+      modelo: slotData.modelo || ""
+    });
 
     if (currentStatusFilter !== "all") {
-      const estado = slotData.estado || "libre";
       if (estado !== currentStatusFilter) continue;
     }
 
@@ -267,36 +287,103 @@ function renderPuestoCard(puestoId) {
     return "";
   }
 
+  // Determinar si este puesto debe estar recogido
+  let isCollapsed = areAllCollapsed;
+  if (explicitlyExpandedPuestos.has(pInfo.id)) isCollapsed = false;
+  else if (explicitlyCollapsedPuestos.has(pInfo.id)) isCollapsed = true;
+
+  // Si hay búsqueda activa o se ha seleccionado un puesto concreto, expandir automáticamente
+  if (searchQuery || currentPuestoFilter !== "all") {
+    isCollapsed = false;
+  }
+
   return `
-    <div class="puesto-card" id="puesto-card-${pInfo.id}">
+    <div class="puesto-card ${isCollapsed ? 'collapsed' : ''}" id="puesto-card-${pInfo.id}">
       <!-- Cabecera del Puesto -->
       <div class="instrument-panel">
         <div class="instrument-top">
-          <div class="puesto-title">
+          <div class="puesto-title" onclick="togglePuestoCollapse('${pInfo.id}')" style="cursor: pointer;">
             <div class="puesto-letter" style="${pInfo.id.length > 2 ? 'font-size: 1.1rem;' : ''}">${pInfo.id}</div>
             <div class="puesto-meta">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <h2 style="margin: 0;">${pInfo.nombre.toUpperCase()}</h2>
-                <button class="btn-icon" onclick="openRenameSinglePuestoModal('${pInfo.id}', '${pInfo.nombre}')" title="Editar nombre de este puesto" style="background: transparent; border: none; cursor: pointer; opacity: 0.6; font-size: 0.85rem; padding: 0.2rem;">✏️</button>
+                <button class="btn-icon" onclick="event.stopPropagation(); openRenameSinglePuestoModal('${pInfo.id}', '${pInfo.nombre}')" title="Editar nombre de este puesto" style="background: transparent; border: none; cursor: pointer; opacity: 0.6; font-size: 0.85rem; padding: 0.2rem;">✏️</button>
               </div>
-              <span>${pInfo.plantaIcono || '🏢'} ${pInfo.plantaNombre} · Capacidad: ${slotsCount} bahías</span>
+              <span>${pInfo.plantaIcono || '🏢'} ${pInfo.plantaNombre} · ${slotsCount - libresCount}/${slotsCount} bahías ocupadas</span>
             </div>
           </div>
-          <div class="instrument-tools">
+          <div class="instrument-tools" style="display: flex; gap: 0.4rem; align-items: center;">
+            <button class="btn-collapse-toggle" id="btn-toggle-${pInfo.id}" onclick="togglePuestoCollapse('${pInfo.id}')" title="Plegar / Desplegar las 4 bahías de este puesto">
+              <span>${isCollapsed ? '▼ Desplegar' : '▲ Recoger'}</span>
+            </button>
             <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" onclick="openPuestoQRModal('${pInfo.id}')" title="Generar QR de este puesto">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               QR Puesto
             </button>
           </div>
         </div>
+
+        <!-- Tira de Resumen de Bahías en vista limpia / recogida -->
+        <div class="puesto-summary-strip" onclick="togglePuestoCollapse('${pInfo.id}')" style="cursor: pointer;" title="Haz clic para ${isCollapsed ? 'desplegar' : 'recoger'} las bahías">
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; flex: 1; align-items: center;">
+            ${baySummaries.map(b => {
+              const label = b.equipo ? `${b.equipo}` : (b.estado === 'libre' ? 'Libre' : (b.estado === 'no_tocar' ? 'No Tocar' : 'En Uso'));
+              return `
+                <span class="bay-mini-pill ${b.estado}" title="Bahía ${b.slotId}: ${b.equipo || b.estado}">
+                  <span class="dot ${b.estado}" style="width: 7px; height: 7px;"></span>
+                  <span><strong>B${b.slotNum}:</strong> ${escapeHtml(label.length > 20 ? label.slice(0, 18) + '...' : label)}</span>
+                </span>
+              `;
+            }).join("")}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.5rem;">
+            ${noTocarCount > 0 ? `<span style="color: #fb7185; font-weight: 600;">🔴 ${noTocarCount}</span>` : ''}
+            ${enUsoCount > 0 ? `<span style="color: #fbbf24;">🟡 ${enUsoCount}</span>` : ''}
+            ${libresCount > 0 ? `<span style="color: #34d399;">🟢 ${libresCount}</span>` : ''}
+          </div>
+        </div>
       </div>
 
-      <!-- Bahías Físicas -->
+      <!-- Bahías Físicas (Desplegables) -->
       <div class="slots-container">
         ${slotCardsHtml.join("")}
       </div>
     </div>
   `;
+}
+
+function togglePuestoCollapse(puestoId) {
+  const card = document.getElementById(`puesto-card-${puestoId}`);
+  if (!card) return;
+
+  const isCurrentlyCollapsed = card.classList.contains("collapsed");
+  if (isCurrentlyCollapsed) {
+    card.classList.remove("collapsed");
+    explicitlyExpandedPuestos.add(puestoId);
+    explicitlyCollapsedPuestos.delete(puestoId);
+  } else {
+    card.classList.add("collapsed");
+    explicitlyCollapsedPuestos.add(puestoId);
+    explicitlyExpandedPuestos.delete(puestoId);
+  }
+
+  const btn = document.getElementById(`btn-toggle-${puestoId}`);
+  if (btn) {
+    btn.innerHTML = `<span>${!isCurrentlyCollapsed ? '▼ Desplegar' : '▲ Recoger'}</span>`;
+  }
+}
+
+function toggleAllCardsCollapse() {
+  areAllCollapsed = !areAllCollapsed;
+  explicitlyExpandedPuestos.clear();
+  explicitlyCollapsedPuestos.clear();
+
+  const btnLabel = document.getElementById("btn-toggle-all-cards-text");
+  if (btnLabel) {
+    btnLabel.textContent = areAllCollapsed ? "🔽 Desplegar Bahías" : "🔼 Recoger Bahías";
+  }
+
+  renderPuestos();
 }
 
 function renderSlotCard(slot, slotId) {
