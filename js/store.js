@@ -233,21 +233,28 @@ const Store = {
 
     const prev = this.data.slots[slotId];
 
-    // Archivar automáticamente en el histórico si tenía equipo asignado
-    if (prev.equipo && prev.equipo.trim()) {
+    // Archivar automáticamente en el histórico si estaba en uso, no tocar o tenía datos
+    const estabaOcupado = prev && (
+      (prev.estado && prev.estado !== "libre") ||
+      (prev.equipo && prev.equipo.trim()) ||
+      (prev.responsable && prev.responsable.trim()) ||
+      (prev.prueba && prev.prueba.trim())
+    );
+
+    if (estabaOcupado) {
       if (!this.data.historico) this.data.historico = [];
       this.data.historico.unshift({
         id: "hist_" + Date.now(),
         slot_id: slotId,
         puesto: slotId[0],
         slot: parseInt(slotId.substring(1), 10),
-        equipo: prev.equipo,
+        equipo: (prev.equipo && prev.equipo.trim()) || (prev.estado === "no_tocar" ? "Ensayo Crítico (No Tocar)" : "Equipo en prueba"),
         modelo: prev.modelo || "",
         sw: prev.sw || "",
         validacion: prev.validacion || "",
         iot: prev.iot || "",
-        prueba: prev.prueba || "",
-        responsable: prev.responsable || "",
+        prueba: prev.prueba || (prev.estado === "no_tocar" ? "Ensayo Crítico / No Manipular" : "Ensayo"),
+        responsable: prev.responsable || "No especificado",
         f_inicio: prev.f_inicio || "",
         f_final: prev.f_final || new Date().toISOString().slice(0, 10),
         descripcion: prev.descripcion || "",
