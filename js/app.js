@@ -95,6 +95,7 @@ function renderMetrics() {
   let libres = 0;
   let disponibles = 0;
   let noTocar = 0;
+  let dataloggers = 0;
   let totalSlots = 0;
 
   relevantPuestoIds.forEach(pId => {
@@ -109,17 +110,21 @@ function renderMetrics() {
       if (slot.estado === "libre" || !slot.estado) libres++;
       else if (slot.estado === "en_uso_disponible") disponibles++;
       else if (slot.estado === "no_tocar") noTocar++;
+
+      if (slot.datalogger) dataloggers++;
     }
   });
 
   const libresEl = document.getElementById("metric-libres");
   const dispEl = document.getElementById("metric-disponibles") || document.getElementById("metric-en-uso");
   const noTocarEl = document.getElementById("metric-no-tocar");
+  const dataloggersEl = document.getElementById("metric-dataloggers");
   const totalEl = document.getElementById("metric-total");
 
   if (libresEl) libresEl.textContent = libres;
   if (dispEl) dispEl.textContent = disponibles;
   if (noTocarEl) noTocarEl.textContent = noTocar;
+  if (dataloggersEl) dataloggersEl.textContent = dataloggers;
   if (totalEl) totalEl.textContent = `${totalSlots - libres}/${totalSlots}`;
 }
 
@@ -293,7 +298,8 @@ function renderPuestoCard(puestoId) {
       slotNum,
       estado,
       equipo: slotData.equipo || "",
-      modelo: slotData.modelo || ""
+      modelo: slotData.modelo || "",
+      datalogger: !!slotData.datalogger
     });
 
     if (currentStatusFilter !== "all") {
@@ -361,9 +367,9 @@ function renderPuestoCard(puestoId) {
               const label = b.equipo ? `${b.equipo}` : (b.estado === 'libre' ? 'Libre' : (b.estado === 'no_tocar' ? 'No Tocar' : 'En Uso'));
               const displayName = (b.slotId && b.slotId.length <= 2) ? b.slotId : `B${b.slotNum}`;
               return `
-                <span class="bay-mini-pill ${b.estado}" title="Bahía ${b.slotId}: ${b.equipo || b.estado}">
+                <span class="bay-mini-pill ${b.estado}" title="Bahía ${b.slotId}: ${b.equipo || b.estado}${b.datalogger ? ' (Datalogger conectado)' : ''}">
                   <span class="dot ${b.estado}" style="width: 7px; height: 7px;"></span>
-                  <span><strong>${displayName}:</strong> ${escapeHtml(label.length > 20 ? label.slice(0, 18) + '...' : label)}</span>
+                  <span><strong>${displayName}:</strong> ${escapeHtml(label.length > 18 ? label.slice(0, 16) + '...' : label)}${b.datalogger ? ' <span style="color: #38bdf8; font-size: 0.7rem;" title="Datalogger activo">📊</span>' : ''}</span>
                 </span>
               `;
             }).join("")}
@@ -432,7 +438,13 @@ function renderSlotCard(slot, slotId) {
   return `
     <div class="slot-card state-${estado}" id="card-slot-${slotId}">
       <div class="slot-header">
-        <span class="slot-badge-num">${slotId}</span>
+        <div style="display: flex; align-items: center; gap: 0.45rem;">
+          <span class="slot-badge-num">${slotId}</span>
+          <label class="datalogger-check-pill ${slot.datalogger ? 'checked' : ''}" onclick="event.stopPropagation();" title="Marcar o desmarcar Datalogger conectado en ${slotId}">
+            <input type="checkbox" ${slot.datalogger ? 'checked' : ''} onchange="toggleDataloggerDirectly('${slotId}', this.checked)" />
+            <span>📊 Datalogger</span>
+          </label>
+        </div>
         <span class="slot-status-pill ${estado}">${statusLabel}</span>
       </div>
 
@@ -479,6 +491,7 @@ function renderSlotCard(slot, slotId) {
             <div class="eq-test" title="${slot.prueba || ''}">${slot.prueba || 'Prueba en curso'}</div>
 
             <div class="eq-meta-tags">
+              ${slot.datalogger ? `<span class="meta-chip datalogger" title="Datalogger conectado en esta bahía">📊 Datalogger Conectado</span>` : ''}
               ${slot.sw ? `<span class="meta-chip sw" title="Versión de SW">SW: ${slot.sw}</span>` : ''}
               ${slot.iot ? `<span class="meta-chip iot" title="ID / Conectividad IoT">${slot.iot}</span>` : ''}
               ${slot.responsable ? `<span class="meta-chip user" title="Responsable">👤 ${slot.responsable}</span>` : ''}
@@ -525,6 +538,15 @@ function attachCardEvents() {
   // Los eventos onclick están integrados en las plantillas
 }
 
+async function toggleDataloggerDirectly(slotId, isChecked) {
+  try {
+    showToast(`Datalogger ${isChecked ? 'conectado 📊' : 'desconectado'} en ${slotId}`, isChecked ? "success" : "info");
+    await Store.toggleDatalogger(slotId, isChecked);
+  } catch (err) {
+    console.error("Error al actualizar estado de datalogger:", err);
+  }
+}
+
 /* Modales y Edición */
 function openEditModal(slotId) {
   currentEditSlotId = slotId;
@@ -542,6 +564,8 @@ function openEditModal(slotId) {
   document.getElementById("form-sw").value = slotData.sw || "";
   document.getElementById("form-validacion").value = slotData.validacion || "";
   document.getElementById("form-iot").value = slotData.iot || "";
+  const dataloggerCheck = document.getElementById("form-datalogger");
+  if (dataloggerCheck) dataloggerCheck.checked = !!slotData.datalogger;
   document.getElementById("form-prueba").value = slotData.prueba || "";
   document.getElementById("form-responsable").value = slotData.responsable || "";
   document.getElementById("form-f-inicio").value = slotData.f_inicio || "";
@@ -630,6 +654,7 @@ async function saveSlotForm() {
     sw: document.getElementById("form-sw").value.trim(),
     validacion: document.getElementById("form-validacion").value.trim(),
     iot: document.getElementById("form-iot").value.trim(),
+    datalogger: document.getElementById("form-datalogger") ? document.getElementById("form-datalogger").checked : false,
     prueba: document.getElementById("form-prueba").value.trim(),
     responsable: document.getElementById("form-responsable").value.trim(),
     f_inicio: document.getElementById("form-f-inicio").value,
@@ -1524,6 +1549,7 @@ function renderHistorico() {
                 ${activeSlot.modelo ? `<span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">· ${escapeHtml(activeSlot.modelo)}</span>` : ''}
               </div>
               <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
+                ${activeSlot.datalogger ? `<span class="meta-chip datalogger" style="font-size: 0.68rem;">📊 Datalogger Conectado</span>` : ''}
                 ${activeSlot.sw ? `<span class="meta-chip sw" style="font-size: 0.68rem;">SW: ${escapeHtml(activeSlot.sw)}</span>` : ''}
                 ${activeSlot.iot ? `<span class="meta-chip iot" style="font-size: 0.68rem;">IoT: ${escapeHtml(activeSlot.iot)}</span>` : ''}
                 ${activeSlot.responsable ? `<span class="meta-chip user" style="font-size: 0.68rem;">👤 ${escapeHtml(activeSlot.responsable)}</span>` : ''}
@@ -1585,6 +1611,7 @@ function renderHistorico() {
         </div>
 
         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.45rem 0;">
+          ${item.datalogger ? `<span class="meta-chip datalogger" style="font-size: 0.68rem;">📊 Datalogger</span>` : ''}
           ${item.sw ? `<span class="meta-chip sw" style="font-size: 0.68rem;">SW: ${item.sw}</span>` : ''}
           ${item.iot ? `<span class="meta-chip iot" style="font-size: 0.68rem;">IoT: ${item.iot}</span>` : ''}
           ${item.responsable ? `<span class="meta-chip user" style="font-size: 0.68rem;">👤 ${item.responsable}</span>` : ''}
