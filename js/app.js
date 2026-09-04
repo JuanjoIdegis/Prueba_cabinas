@@ -772,8 +772,25 @@ function closeQRScannerModal() {
 }
 
 /* Carteles QR para Imprimir */
-function openQRPrintModal(mode = "puestos") {
+function openQRPrintModal(mode = "todos") {
   const modal = document.getElementById("qr-print-modal");
+  const titleEl = document.getElementById("qr-print-modal-title");
+  const subEl = document.getElementById("qr-print-modal-subtitle");
+  const filterLabel = document.getElementById("print-modal-filter-label");
+  const buttonsContainer = document.getElementById("print-filter-buttons");
+
+  if (titleEl) titleEl.textContent = "Carteles QR para Paneles de Cabina";
+  if (subEl) subEl.textContent = "Imprime y pega los carteles para acceder directamente con la cámara del móvil";
+  if (filterLabel) filterLabel.textContent = "Selecciona qué carteles generar:";
+  if (buttonsContainer) {
+    buttonsContainer.innerHTML = `
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'todos')">🏢 Todos los Puestos (Zonas 1 a 7)</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'zona1')">⚡ Zona 1: Cabinas Test (A - J)</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'pilotos')">🧪 Zonas 2 a 7: Plantas Piloto</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'slots')">🏷️ Identificadores Individuales (A1 - EC2_4)</button>
+    `;
+  }
+
   modal.classList.add("active");
   QRGenerator.renderPrintSheet("print-sheet-container", mode);
 }
@@ -782,12 +799,63 @@ function closeQRPrintModal() {
   document.getElementById("qr-print-modal").classList.remove("active");
 }
 
-function openPuestoQRModal(puesto) {
-  openQRPrintModal("puestos");
+function openPuestoQRModal(puestoId) {
+  const p = Store.getPuestoInfo(puestoId);
+  if (!p) {
+    openQRPrintModal("todos");
+    return;
+  }
+
+  const modal = document.getElementById("qr-print-modal");
+  const titleEl = document.getElementById("qr-print-modal-title");
+  const subEl = document.getElementById("qr-print-modal-subtitle");
+  const filterLabel = document.getElementById("print-modal-filter-label");
+  const buttonsContainer = document.getElementById("print-filter-buttons");
+
+  if (titleEl) titleEl.textContent = `Carteles QR: ${p.nombre} (${p.id})`;
+  if (subEl) subEl.textContent = `Cartel general del ${p.nombre} y sus identificadores individuales`;
+  if (filterLabel) filterLabel.textContent = `Opciones para ${p.id}:`;
+
+  const count = p.slotsCount || 4;
+  const rangeStr = p.id.length > 2 || p.id.includes('_') ? `${p.id}_1 a ${p.id}_${count}` : `${p.id}1 a ${p.id}${count}`;
+
+  if (buttonsContainer) {
+    buttonsContainer.innerHTML = `
+      <button class="btn btn-primary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'single_puesto_completo', '${puestoId}')">📑 Puesto Completo (${p.id} + ${rangeStr})</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'single_puesto', '${puestoId}')">📌 Solo Puesto ${p.id}</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'single_puesto_slots', '${puestoId}')">🏷️ Solo Posiciones (${rangeStr})</button>
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="openQRPrintModal('todos')">🏢 Ver todos los puestos...</button>
+    `;
+  }
+
+  modal.classList.add("active");
+  QRGenerator.renderPrintSheet("print-sheet-container", "single_puesto_completo", puestoId);
 }
 
 function openSlotQRModal(slotId) {
-  openQRPrintModal("slots");
+  const parsed = Store._parseSlotId(slotId, {});
+  const p = Store.getPuestoInfo(parsed.puesto);
+
+  const modal = document.getElementById("qr-print-modal");
+  const titleEl = document.getElementById("qr-print-modal-title");
+  const subEl = document.getElementById("qr-print-modal-subtitle");
+  const filterLabel = document.getElementById("print-modal-filter-label");
+  const buttonsContainer = document.getElementById("print-filter-buttons");
+
+  if (titleEl) titleEl.textContent = `Código QR: ${slotId}`;
+  if (subEl) subEl.textContent = `Acceso directo y cartel para la posición ${slotId} (${p ? p.nombre : ''})`;
+  if (filterLabel) filterLabel.textContent = `Opciones:`;
+
+  if (buttonsContainer) {
+    buttonsContainer.innerHTML = `
+      <button class="btn btn-primary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'single_slot', '${slotId}')">🏷️ Solo ${slotId}</button>
+      ${p ? `<button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="openPuestoQRModal('${p.id}')">📑 Ver Puesto ${p.id} completo</button>` : ''}
+      <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="openQRPrintModal('todos')">🏢 Ver todos los puestos...</button>
+    `;
+  }
+
+  modal.classList.add("active");
+  QRGenerator.renderPrintSheet("print-sheet-container", "single_slot", slotId);
 }
 
 /* Edición y Personalización de Nombres de Zonas y Puestos */
