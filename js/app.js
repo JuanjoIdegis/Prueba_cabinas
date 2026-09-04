@@ -245,9 +245,14 @@ function renderSlotCard(slot, slotId) {
             </svg>
           </div>
           <div class="slot-empty-text">Bahía sin equipo conectado.<br>Disponible para pruebas.</div>
-          <button class="btn btn-slot connect" onclick="openEditModal('${slotId}')">
-            ➕ Conectar Equipo
-          </button>
+          <div style="display: flex; gap: 0.4rem; justify-content: center;">
+            <button class="btn btn-slot connect" onclick="openEditModal('${slotId}')">
+              ➕ Conectar Equipo
+            </button>
+            <button class="btn btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en esta bahía">
+              📜 Historial
+            </button>
+          </div>
         </div>
       ` : `
         <div class="slot-body">
@@ -298,7 +303,10 @@ function renderSlotCard(slot, slotId) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             QR
           </button>
-          <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y liberar">
+          <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en esta bahía">
+            📜 Historial
+          </button>
+          <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y archivar en histórico">
             Liberar
           </button>
         </div>
@@ -425,16 +433,26 @@ async function saveSlotForm() {
   };
 
   closeEditModal();
-  showToast(`Guardando bahía ${currentEditSlotId}...`, "success");
+  showToast(`Guardando bahía ${currentEditSlotId}...`, "info");
 
-  await Store.updateSlot(slotData);
-  showToast(`Bahía ${currentEditSlotId} actualizada`, "success");
+  const syncResult = await Store.updateSlot(slotData);
+  if (syncResult && syncResult.github) {
+    showToast(`✅ Bahía ${currentEditSlotId} sincronizada en GitHub`, "success");
+  } else if (syncResult && syncResult.localOnly) {
+    showToast(`💾 Bahía ${currentEditSlotId} guardada localmente (Añade token en ⚙️ para GitHub)`, "info");
+  } else {
+    showToast(`Bahía ${currentEditSlotId} actualizada`, "success");
+  }
 }
 
-function confirmarLiberar(slotId) {
-  if (confirm(`¿Estás seguro de liberar la bahía ${slotId}? Se borrarán los datos del equipo conectado.`)) {
-    Store.liberarSlot(slotId);
-    showToast(`Bahía ${slotId} liberada`, "warning");
+async function confirmarLiberar(slotId) {
+  if (confirm(`¿Estás seguro de liberar la bahía ${slotId}? El equipo actual se archivará en el Histórico de ensayos.`)) {
+    const syncResult = await Store.liberarSlot(slotId);
+    if (syncResult && syncResult.github) {
+      showToast(`✅ Bahía ${slotId} liberada y archivada en GitHub`, "warning");
+    } else {
+      showToast(`Bahía ${slotId} liberada y archivada en el Histórico`, "warning");
+    }
   }
 }
 
@@ -682,6 +700,15 @@ function setupEventListeners() {
       document.getElementById("form-f-inicio").value = today;
     });
   }
+
+  // Buscador de Histórico
+  const histSearch = document.getElementById("historico-search-input");
+  if (histSearch) {
+    histSearch.addEventListener("input", (e) => {
+      currentHistoricoSearch = e.target.value;
+      renderHistorico();
+    });
+  }
 }
 
 function resetFilters() {
@@ -695,6 +722,158 @@ function resetFilters() {
     else p.classList.remove("active");
   });
   renderApp();
+}
+
+/* HISTÓRICO DE ENSAYOS Y EQUIPOS */
+let currentHistoricoPuesto = "all";
+let currentHistoricoSlot = null;
+let currentHistoricoSearch = "";
+
+function openHistoricoModal(slotId = null) {
+  currentHistoricoSlot = slotId;
+  currentHistoricoSearch = "";
+  const modal = document.getElementById("historico-modal");
+  const searchInput = document.getElementById("historico-search-input");
+  if (searchInput) searchInput.value = "";
+
+  if (slotId) {
+    currentHistoricoPuesto = slotId[0];
+    document.getElementById("historico-modal-title").textContent = `Historial de la Bahía ${slotId}`;
+  } else {
+    currentHistoricoPuesto = "all";
+    document.getElementById("historico-modal-title").textContent = "Historial General de la Cabina";
+  }
+
+  // Actualizar pills de puesto
+  document.querySelectorAll("#historico-puesto-pills .filter-pill").forEach(pill => {
+    if (pill.dataset.puesto === currentHistoricoPuesto) pill.classList.add("active");
+    else pill.classList.remove("active");
+  });
+
+  renderHistorico();
+  modal.classList.add("active");
+}
+
+function closeHistoricoModal() {
+  document.getElementById("historico-modal").classList.remove("active");
+}
+
+function filterHistoricoByPuesto(puesto) {
+  currentHistoricoPuesto = puesto;
+  currentHistoricoSlot = null; // Reiniciar filtro por slot específico al cambiar de puesto
+  document.getElementById("historico-modal-title").textContent = puesto === "all" ? "Historial General de la Cabina" : `Historial del Puesto ${puesto}`;
+  document.querySelectorAll("#historico-puesto-pills .filter-pill").forEach(pill => {
+    if (pill.dataset.puesto === puesto) pill.classList.add("active");
+    else pill.classList.remove("active");
+  });
+  renderHistorico();
+}
+
+function renderHistorico() {
+  const container = document.getElementById("historico-list-container");
+  const countLabel = document.getElementById("historico-count-label");
+  if (!container) return;
+
+  const historico = Store.data.historico || [];
+
+  // Filtrar
+  const filtered = historico.filter(item => {
+    // Filtro puesto / bahía
+    if (currentHistoricoSlot && item.slot_id !== currentHistoricoSlot) return false;
+    if (currentHistoricoPuesto !== "all" && item.puesto !== currentHistoricoPuesto) return false;
+
+    // Filtro búsqueda
+    if (currentHistoricoSearch) {
+      const q = currentHistoricoSearch.toLowerCase();
+      const searchable = [
+        item.equipo, item.modelo, item.sw, item.validacion, item.iot,
+        item.prueba, item.responsable, item.descripcion, item.slot_id, item.motivo_cierre
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!searchable.includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  if (countLabel) countLabel.textContent = `Registros encontrados: ${filtered.length} (Total en archivo: ${historico.length})`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-dim);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5;">📜</div>
+        <div style="font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem;">No hay registros históricos ${currentHistoricoSlot ? `para la bahía ${currentHistoricoSlot}` : ''}</div>
+        <p style="font-size: 0.8rem; max-width: 420px; margin: 0 auto;">
+          Cada vez que un equipo se desconecta (botón "Liberar") o se reemplaza por otro modelo en una bahía, se archiva aquí automáticamente con su foto, software, responsable y fechas.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => `
+    <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; display: flex; gap: 1rem; align-items: flex-start; transition: all 0.2s ease;">
+      <!-- Thumbnail de Foto -->
+      <div style="width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openImageViewer('${item.imagen || 'app/img/cabina_puesto_f.png'}', '${item.equipo}')">
+        ${item.imagen ? `
+          <img src="${item.imagen}" style="width: 100%; height: 100%; object-fit: cover;" alt="${item.equipo}" />
+        ` : `
+          <span style="font-size: 1.5rem; opacity: 0.4;">📦</span>
+        `}
+      </div>
+
+      <!-- Info del Ensayo -->
+      <div style="flex: 1; min-width: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+          <div>
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: #334155; color: #38bdf8; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; margin-right: 0.4rem;">
+              BAHÍA ${item.slot_id}
+            </span>
+            <strong style="font-size: 1rem; color: #fff;">${item.equipo || 'Sin nombre'}</strong>
+            <span style="color: var(--text-dim); font-size: 0.85rem; margin-left: 0.4rem;">· ${item.modelo || 'Modelo N/D'}</span>
+          </div>
+          <span style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">
+            Archivado: ${item.fecha_registro ? item.fecha_registro.slice(0, 10) : '--'}
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.45rem 0;">
+          ${item.sw ? `<span class="meta-chip sw" style="font-size: 0.68rem;">SW: ${item.sw}</span>` : ''}
+          ${item.iot ? `<span class="meta-chip iot" style="font-size: 0.68rem;">IoT: ${item.iot}</span>` : ''}
+          ${item.responsable ? `<span class="meta-chip user" style="font-size: 0.68rem;">👤 ${item.responsable}</span>` : ''}
+          ${item.prueba ? `<span class="meta-chip" style="font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Ensayo: ${item.prueba}</span>` : ''}
+          ${item.motivo_cierre ? `<span class="meta-chip" style="font-size: 0.68rem; background: rgba(244, 63, 94, 0.15); color: #f43f5e;">${item.motivo_cierre}</span>` : ''}
+        </div>
+
+        ${item.descripcion ? `
+          <div style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0,0,0,0.25); padding: 0.35rem 0.6rem; border-radius: 4px; border-left: 2px solid rgba(255,255,255,0.15); margin-bottom: 0.4rem;">
+            ${item.descripcion}
+          </div>
+        ` : ''}
+
+        <div style="font-size: 0.72rem; color: var(--text-dim); display: flex; gap: 1rem;">
+          <span>📅 Periodo Ensayo: ${item.f_inicio || '--'} al ${item.f_final || '--'}</span>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function downloadHistoricoCSV() {
+  const csvData = Store.exportHistoricoCSV();
+  if (!csvData) {
+    showToast("No hay registros en el histórico para exportar.", "warning");
+    return;
+  }
+
+  const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `historico_cabina_fluidra_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  showToast("Descargando archivo CSV de histórico...", "success");
 }
 
 function showToast(msg, type = "success") {

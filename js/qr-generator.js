@@ -9,7 +9,7 @@ const QRGenerator = {
     if (window.location.hostname.includes("github.io")) {
       return window.location.origin + window.location.pathname.replace(/\/$/, "");
     }
-    return "https://idegis.github.io/test_cabinas";
+    return "https://juanjoidegis.github.io/Prueba_cabinas";
   },
 
   setBaseUrl(url) {

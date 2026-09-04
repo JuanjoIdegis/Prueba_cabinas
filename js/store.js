@@ -11,8 +11,8 @@ const Store = {
   },
 
   githubConfig: {
-    owner: "idegis",
-    repo: "test_cabinas",
+    owner: "JuanjoIdegis",
+    repo: "Prueba_cabinas",
     branch: "main",
     filePath: "database.json",
     token: localStorage.getItem("github_token") || ""
@@ -131,11 +131,45 @@ const Store = {
 
   applyRemoteData(remoteData) {
     if (!remoteData || !remoteData.slots) return;
-    const strNew = JSON.stringify(remoteData);
-    const strOld = JSON.stringify(this.data);
-    if (strNew !== strOld) {
-      this.data = remoteData;
-      localStorage.setItem("cabina_equipos_db", strNew);
+
+    // Fusión inteligente: Solo sobrescribir una bahía si el dato remoto es más reciente
+    let hasChanges = false;
+    if (!this.data.slots) this.data.slots = {};
+
+    Object.keys(remoteData.slots).forEach(slotId => {
+      const remoteSlot = remoteData.slots[slotId];
+      const localSlot = this.data.slots[slotId];
+
+      if (!localSlot) {
+        this.data.slots[slotId] = remoteSlot;
+        hasChanges = true;
+      } else {
+        const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
+        const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
+
+        // Si el remoto es estrictamente más reciente que nuestra copia local
+        if (remoteTime > localTime) {
+          this.data.slots[slotId] = remoteSlot;
+          hasChanges = true;
+        }
+      }
+    });
+
+    // Fusión de histórico
+    if (remoteData.historico && Array.isArray(remoteData.historico)) {
+      if (!this.data.historico) this.data.historico = [];
+      const existingIds = new Set(this.data.historico.map(h => h.id));
+      remoteData.historico.forEach(h => {
+        if (!existingIds.has(h.id)) {
+          this.data.historico.push(h);
+          hasChanges = true;
+        }
+      });
+      this.data.historico.sort((a, b) => new Date(b.fecha_registro || 0) - new Date(a.fecha_registro || 0));
+    }
+
+    if (hasChanges) {
+      localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
       this.notify();
     }
   },
@@ -144,6 +178,32 @@ const Store = {
     const slotId = slotData.slot_id || `${slotData.puesto}${slotData.slot}`;
 
     if (!this.data.slots) this.data.slots = {};
+    const prev = this.data.slots[slotId];
+
+    // Si ya había un equipo registrado y se cambia el nombre del equipo, archivar el anterior
+    if (prev && prev.equipo && prev.equipo.trim() && slotData.equipo && prev.equipo.trim() !== slotData.equipo.trim()) {
+      if (!this.data.historico) this.data.historico = [];
+      this.data.historico.unshift({
+        id: "hist_" + Date.now(),
+        slot_id: slotId,
+        puesto: slotId[0],
+        slot: parseInt(slotId.substring(1), 10),
+        equipo: prev.equipo,
+        modelo: prev.modelo || "",
+        sw: prev.sw || "",
+        validacion: prev.validacion || "",
+        iot: prev.iot || "",
+        prueba: prev.prueba || "",
+        responsable: prev.responsable || "",
+        f_inicio: prev.f_inicio || "",
+        f_final: prev.f_final || new Date().toISOString().slice(0, 10),
+        descripcion: prev.descripcion || "",
+        imagen: prev.imagen || "",
+        motivo_cierre: `Reemplazado por ${slotData.equipo}`,
+        fecha_registro: new Date().toISOString()
+      });
+    }
+
     this.data.slots[slotId] = {
       ...this.data.slots[slotId],
       ...slotData,
@@ -168,8 +228,34 @@ const Store = {
     return syncResult;
   },
 
-  async liberarSlot(slotId) {
+  async liberarSlot(slotId, motivo = "Ensayo finalizado / Liberado") {
     if (!this.data.slots || !this.data.slots[slotId]) return;
+
+    const prev = this.data.slots[slotId];
+
+    // Archivar automáticamente en el histórico si tenía equipo asignado
+    if (prev.equipo && prev.equipo.trim()) {
+      if (!this.data.historico) this.data.historico = [];
+      this.data.historico.unshift({
+        id: "hist_" + Date.now(),
+        slot_id: slotId,
+        puesto: slotId[0],
+        slot: parseInt(slotId.substring(1), 10),
+        equipo: prev.equipo,
+        modelo: prev.modelo || "",
+        sw: prev.sw || "",
+        validacion: prev.validacion || "",
+        iot: prev.iot || "",
+        prueba: prev.prueba || "",
+        responsable: prev.responsable || "",
+        f_inicio: prev.f_inicio || "",
+        f_final: prev.f_final || new Date().toISOString().slice(0, 10),
+        descripcion: prev.descripcion || "",
+        imagen: prev.imagen || "",
+        motivo_cierre: motivo,
+        fecha_registro: new Date().toISOString()
+      });
+    }
 
     const puesto = slotId[0];
     const slotNum = parseInt(slotId.substring(1), 10);
@@ -195,7 +281,7 @@ const Store = {
     localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
     this.notify();
 
-    const syncResult = await this.saveToGitHub(`Liberar bahía ${slotId}`);
+    const syncResult = await this.saveToGitHub(`Archivar e histórico bahía ${slotId} (${prev.equipo || 'Libre'})`);
 
     try {
       fetch("/api/equipos/liberar", {
@@ -206,6 +292,31 @@ const Store = {
     } catch (e) {}
 
     return syncResult;
+  },
+
+  exportHistoricoCSV() {
+    const hist = this.data.historico || [];
+    if (hist.length === 0) return null;
+
+    const headers = ["Puesto", "Bahía", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre", "Fecha Registro", "Descripción"];
+    const rows = hist.map(h => [
+      h.puesto || "",
+      h.slot_id || "",
+      `"${(h.equipo || "").replace(/"/g, '""')}"`,
+      `"${(h.modelo || "").replace(/"/g, '""')}"`,
+      `"${(h.sw || "").replace(/"/g, '""')}"`,
+      `"${(h.validacion || "").replace(/"/g, '""')}"`,
+      `"${(h.iot || "").replace(/"/g, '""')}"`,
+      `"${(h.prueba || "").replace(/"/g, '""')}"`,
+      `"${(h.responsable || "").replace(/"/g, '""')}"`,
+      h.f_inicio || "",
+      h.f_final || "",
+      `"${(h.motivo_cierre || "").replace(/"/g, '""')}"`,
+      h.fecha_registro || "",
+      `"${(h.descripcion || "").replace(/"/g, '""')}"`
+    ]);
+
+    return "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\r\n");
   },
 
   async saveToGitHub(commitMessage) {
