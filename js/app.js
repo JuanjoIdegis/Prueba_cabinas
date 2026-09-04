@@ -134,9 +134,9 @@ function renderPlantasNav() {
 
   const plantas = Store.getPlantas();
 
-  let totalBahiasGlobal = 0;
+  let totalGlobal = 0;
   plantas.forEach(pl => {
-    totalBahiasGlobal += pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
+    totalGlobal += pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
   });
 
   const activePlanta = plantas.find(p => p.id === currentPlantaFilter);
@@ -148,15 +148,15 @@ function renderPlantasNav() {
         <label for="zona-select-dropdown" class="zone-select-label">📍 ZONA SELECCIONADA:</label>
         <select id="zona-select-dropdown" class="zone-select-dropdown" title="Cambiar zona de trabajo">
           <option value="all" ${currentPlantaFilter === 'all' ? 'selected' : ''}>
-            🏢 Todas las Zonas (${totalBahiasGlobal} bahías en total)
+            🏢 Todas las Zonas (${totalGlobal} en total)
           </option>
   `;
 
   plantas.forEach((pl, idx) => {
-    const totalBahias = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
+    const totalCount = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
     html += `
       <option value="${pl.id}" ${currentPlantaFilter === pl.id ? 'selected' : ''}>
-        ${pl.icono || '🏢'} ${escapeHtml(pl.nombre)} (${totalBahias} bahías)
+        ${pl.icono || '🏢'} ${escapeHtml(pl.nombre)} (${totalCount})
       </option>
     `;
   });
@@ -258,7 +258,7 @@ function renderPuestos() {
   if (html === "") {
     html = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-dim);">
-        <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No se encontraron bahías con los filtros aplicados</p>
+        <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No se encontraron resultados con los filtros aplicados</p>
         <button class="btn btn-secondary" onclick="resetFilters()">Restablecer filtros</button>
       </div>
     `;
@@ -346,11 +346,11 @@ function renderPuestoCard(puestoId) {
                 <h2 style="margin: 0;">${pInfo.nombre.toUpperCase()}</h2>
                 <button class="btn-icon" onclick="event.stopPropagation(); openRenameSinglePuestoModal('${pInfo.id}', '${pInfo.nombre}')" title="Editar nombre de este puesto" style="background: transparent; border: none; cursor: pointer; opacity: 0.6; font-size: 0.85rem; padding: 0.2rem;">✏️</button>
               </div>
-              <span>${pInfo.plantaIcono || '🏢'} ${pInfo.plantaNombre} · ${slotsCount - libresCount}/${slotsCount} bahías ocupadas</span>
+              <span>${pInfo.plantaIcono || '🏢'} ${pInfo.plantaNombre} · ${slotsCount - libresCount}/${slotsCount} ocupados</span>
             </div>
           </div>
           <div class="instrument-tools" style="display: flex; gap: 0.4rem; align-items: center;">
-            <button class="btn-collapse-toggle" id="btn-toggle-${pInfo.id}" onclick="togglePuestoCollapse('${pInfo.id}')" title="Plegar / Desplegar las 4 bahías de este puesto">
+            <button class="btn-collapse-toggle" id="btn-toggle-${pInfo.id}" onclick="togglePuestoCollapse('${pInfo.id}')" title="Plegar / Desplegar este puesto">
               <span>${isCollapsed ? '▼ Desplegar' : '▲ Recoger'}</span>
             </button>
             <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" onclick="openPuestoQRModal('${pInfo.id}')" title="Generar QR de este puesto">
@@ -360,14 +360,14 @@ function renderPuestoCard(puestoId) {
           </div>
         </div>
 
-        <!-- Tira de Resumen de Bahías en vista limpia / recogida -->
-        <div class="puesto-summary-strip" onclick="togglePuestoCollapse('${pInfo.id}')" style="cursor: pointer;" title="Haz clic para ${isCollapsed ? 'desplegar' : 'recoger'} las bahías">
+        <!-- Tira de Resumen en vista limpia / recogida -->
+        <div class="puesto-summary-strip" onclick="togglePuestoCollapse('${pInfo.id}')" style="cursor: pointer;" title="Haz clic para ${isCollapsed ? 'desplegar' : 'recoger'}">
           <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; flex: 1; align-items: center;">
             ${baySummaries.map(b => {
               const label = b.equipo ? `${b.equipo}` : (b.estado === 'libre' ? 'Libre' : (b.estado === 'no_tocar' ? 'No Tocar' : 'En Uso'));
               const displayName = (b.slotId && b.slotId.length <= 2) ? b.slotId : `B${b.slotNum}`;
               return `
-                <span class="bay-mini-pill ${b.estado}" title="Bahía ${b.slotId}: ${b.equipo || b.estado}${b.datalogger ? ' (Datalogger conectado)' : ''}">
+                <span class="bay-mini-pill ${b.estado}" title="${b.slotId}: ${b.equipo || b.estado}${b.datalogger ? ' (Datalogger conectado)' : ''}">
                   <span class="dot ${b.estado}" style="width: 7px; height: 7px;"></span>
                   <span><strong>${displayName}:</strong> ${escapeHtml(label.length > 18 ? label.slice(0, 16) + '...' : label)}${b.datalogger ? ' <span style="color: #38bdf8; font-size: 0.7rem;" title="Datalogger activo">📊</span>' : ''}</span>
                 </span>
@@ -418,7 +418,7 @@ function toggleAllCardsCollapse() {
 
   const btnLabel = document.getElementById("btn-toggle-all-cards-text");
   if (btnLabel) {
-    btnLabel.textContent = areAllCollapsed ? "🔽 Desplegar Bahías" : "🔼 Recoger Bahías";
+    btnLabel.textContent = areAllCollapsed ? "🔽 Desplegar Todo" : "🔼 Recoger Todo";
   }
 
   renderPuestos();
@@ -450,21 +450,21 @@ function renderSlotCard(slot, slotId) {
 
       ${isLibre && !hasEquipment ? `
         <div class="slot-empty-view">
-          <div class="slot-empty-icon" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo a la bahía ${slotId}">
+          <div class="slot-empty-icon" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo en ${slotId}">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <rect x="3" y="3" width="18" height="18" rx="3"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
           </div>
-          <div class="slot-empty-text" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo a la bahía ${slotId}">
-            Bahía sin equipo conectado.<br>Disponible para pruebas.
+          <div class="slot-empty-text" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo en ${slotId}">
+            Sin equipo conectado.<br>Disponible para pruebas.
           </div>
           <div style="display: flex; gap: 0.4rem; justify-content: center; margin-top: 0.2rem;">
             <button class="btn btn-slot connect" onclick="openEditModal('${slotId}')">
               ➕ Conectar Equipo
             </button>
-            <button class="btn btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en esta bahía">
+            <button class="btn btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
               📜 Historial
             </button>
           </div>
@@ -491,7 +491,7 @@ function renderSlotCard(slot, slotId) {
             <div class="eq-test" title="${slot.prueba || ''}">${slot.prueba || 'Prueba en curso'}</div>
 
             <div class="eq-meta-tags">
-              ${slot.datalogger ? `<span class="meta-chip datalogger" title="Datalogger conectado en esta bahía">📊 Datalogger Conectado</span>` : ''}
+              ${slot.datalogger ? `<span class="meta-chip datalogger" title="Datalogger conectado">📊 Datalogger Conectado</span>` : ''}
               ${slot.sw ? `<span class="meta-chip sw" title="Versión de SW">SW: ${slot.sw}</span>` : ''}
               ${slot.iot ? `<span class="meta-chip iot" title="ID / Conectividad IoT">${slot.iot}</span>` : ''}
               ${slot.responsable ? `<span class="meta-chip user" title="Responsable">👤 ${slot.responsable}</span>` : ''}
@@ -518,12 +518,12 @@ function renderSlotCard(slot, slotId) {
           <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
             🔎 Rastrear
           </button>
-          <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de esta bahía">
+          <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de ${slotId}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             QR
           </button>
-          <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en esta bahía">
-            📜 Bahía
+          <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
+            📜 Historial
           </button>
           <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y archivar en histórico">
             Liberar
@@ -556,7 +556,8 @@ function openEditModal(slotId) {
     estado: "libre"
   };
 
-  document.getElementById("modal-edit-slot-title").textContent = `Editar Bahía ${slotId} (Puesto ${slotData.puesto}, Slot ${slotData.slot})`;
+  const pInfo = Store.getPuestoInfo(slotData.puesto);
+  document.getElementById("modal-edit-slot-title").textContent = `Editar ${slotId} (${pInfo.nombre})`;
 
   // Rellenar campos del formulario
   document.getElementById("form-equipo").value = slotData.equipo || "";
@@ -664,25 +665,25 @@ async function saveSlotForm() {
   };
 
   closeEditModal();
-  showToast(`Guardando bahía ${currentEditSlotId}...`, "info");
+  showToast(`Guardando ${currentEditSlotId}...`, "info");
 
   const syncResult = await Store.updateSlot(slotData);
   if (syncResult && syncResult.github) {
-    showToast(`✅ Bahía ${currentEditSlotId} sincronizada en GitHub`, "success");
+    showToast(`✅ ${currentEditSlotId} sincronizado en GitHub`, "success");
   } else if (syncResult && syncResult.localOnly) {
-    showToast(`💾 Bahía ${currentEditSlotId} guardada localmente (Añade token en ⚙️ para GitHub)`, "info");
+    showToast(`💾 ${currentEditSlotId} guardado localmente (Añade token en ⚙️ para GitHub)`, "info");
   } else {
-    showToast(`Bahía ${currentEditSlotId} actualizada`, "success");
+    showToast(`${currentEditSlotId} actualizado`, "success");
   }
 }
 
 async function confirmarLiberar(slotId) {
-  if (confirm(`¿Estás seguro de liberar la bahía ${slotId}? El equipo actual se archivará en el Histórico de ensayos.`)) {
+  if (confirm(`¿Estás seguro de liberar ${slotId}? El equipo actual se archivará en el Histórico de ensayos.`)) {
     const syncResult = await Store.liberarSlot(slotId);
     if (syncResult && syncResult.github) {
-      showToast(`✅ Bahía ${slotId} liberada y archivada en GitHub`, "warning");
+      showToast(`✅ ${slotId} liberado y archivado en GitHub`, "warning");
     } else {
-      showToast(`Bahía ${slotId} liberada y archivada en el Histórico`, "warning");
+      showToast(`${slotId} liberado y archivado en el Histórico`, "warning");
     }
   }
 }
@@ -753,7 +754,7 @@ function openQRScannerModal() {
     closeQRScannerModal();
     if (result.puesto && result.slot) {
       const slotId = `${result.puesto}${result.slot}`;
-      showToast(`Código detectado: Bahía ${slotId}`, "success");
+      showToast(`Código detectado: ${slotId}`, "success");
       openEditModal(slotId);
     } else if (result.puesto) {
       showToast(`Puesto ${result.puesto} seleccionado`, "success");
@@ -922,7 +923,7 @@ function openEditPuestosModal() {
           <span style="font-size: 1.5rem;">${pl.icono || '🏢'}</span>
           <div style="flex: 1;">
             <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.25rem;">
-              Nombre de la Zona ${zIdx + 1} (${pl.puestos.length} puestos · ${totalSlotsInZone} bahías)
+              Nombre de la Zona ${zIdx + 1} (${pl.puestos.length} puestos · ${totalSlotsInZone} en total)
             </label>
             <input type="text" class="form-input zone-name-input" data-zone-id="${pl.id}" value="${escapeHtml(pl.nombre)}" placeholder="Ej: Zona ${zIdx + 1}: Nombre descriptivo" style="font-size: 0.95rem; font-weight: 700; color: #fff; background: rgba(0,0,0,0.35); border-color: rgba(56,189,248,0.3);" />
           </div>
@@ -943,7 +944,7 @@ function openEditPuestosModal() {
               ID: ${p.id}
             </span>
             <span style="font-size: 0.7rem; color: var(--text-dim);">
-              ${p.slotsCount || 4} bahías
+              ${p.slotsCount || 4} posiciones
             </span>
           </div>
           <input type="text" class="form-input puesto-name-input" data-puesto-id="${p.id}" value="${escapeHtml(p.nombre)}" placeholder="Nombre del puesto" style="font-size: 0.82rem; padding: 0.35rem 0.6rem;" />
@@ -1253,7 +1254,7 @@ function renderTrackResults(tracking) {
 
   if (exportBtn) exportBtn.style.display = "block";
   if (summaryLabel) {
-    summaryLabel.textContent = `Resultados para "${query}": ${activeLocations.length} bahía(s) activa(s) y ${historyLocations.length} estancia(s) archivada(s).`;
+    summaryLabel.textContent = `Resultados para "${query}": ${activeLocations.length} activa(s) y ${historyLocations.length} estancia(s) archivada(s).`;
   }
 
   let html = "";
@@ -1277,7 +1278,7 @@ function renderTrackResults(tracking) {
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span style="font-family: var(--font-mono); font-size: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; color: #38bdf8;">
-                  ${loc.planta_nombre} · ${loc.puesto_nombre} (Bahía ${loc.slot_id})
+                  ${loc.planta_nombre} · ${loc.puesto_nombre} · ${loc.slot_id}
                 </span>
                 <span class="badge-status ${loc.estado === 'no_tocar' ? 'badge-danger' : 'badge-success'}" style="font-size: 0.72rem;">
                   ${loc.estado === 'no_tocar' ? '🔴 No Tocar (Crítico)' : '🟢 En Uso'}
@@ -1297,7 +1298,7 @@ function renderTrackResults(tracking) {
           </div>
           <div>
             <button class="btn btn-primary" onclick="goToSlotAndHighlight('${loc.planta_id}', '${loc.slot_id}')" style="font-size: 0.8rem; padding: 0.45rem 0.9rem;">
-              👉 Ir al Puesto y Bahía
+              👉 Ver ${loc.slot_id}
             </button>
           </div>
         </div>
@@ -1308,8 +1309,8 @@ function renderTrackResults(tracking) {
       <div class="track-inactive-banner">
         <span style="font-size: 1.4rem;">⚪</span>
         <div>
-          <strong style="color: #fff; display: block; margin-bottom: 0.15rem;">Actualmente NO está conectado en ninguna bahía</strong>
-          <span>El equipo no se encuentra en uso activo en Planta Cabina ni en Planta Piloto. Consulta su historial abajo para ver dónde estuvo.</span>
+          <strong style="color: #fff; display: block; margin-bottom: 0.15rem;">Actualmente NO está conectado en ningún puesto</strong>
+          <span>El equipo no se encuentra en uso activo. Consulta su historial abajo para ver dónde estuvo.</span>
         </div>
       </div>
     `;
@@ -1336,7 +1337,7 @@ function renderTrackResults(tracking) {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
               <div>
                 <span style="font-family: var(--font-mono); font-size: 0.75rem; background: #1e293b; color: #38bdf8; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(56,189,248,0.25);">
-                  ${item.planta_nombre || 'Cabina'} · ${item.puesto_nombre || `Puesto ${item.puesto}`} · Bahía ${item.slot_id}
+                  ${item.planta_nombre || 'Cabina'} · ${item.puesto_nombre || `Puesto ${item.puesto}`} · ${item.slot_id}
                 </span>
                 <strong style="font-size: 0.95rem; color: #fff; margin-left: 0.4rem;">${escapeHtml(item.equipo || 'Equipo')}</strong>
                 ${item.modelo ? `<span style="color: var(--text-dim); font-size: 0.82rem;">· ${escapeHtml(item.modelo)}</span>` : ''}
@@ -1444,7 +1445,7 @@ function openHistoricoModal(slotId = null) {
   if (slotId) {
     const pInfo = Store.getPuestoInfo(slotId.split("_")[0] || slotId[0]);
     currentHistoricoPuesto = slotId.split("_")[0] || slotId[0];
-    document.getElementById("historico-modal-title").textContent = `Historial de la Bahía ${slotId} (${pInfo.nombre})`;
+    document.getElementById("historico-modal-title").textContent = `Historial de ${slotId} (${pInfo.nombre})`;
   } else {
     currentHistoricoPuesto = "all";
     document.getElementById("historico-modal-title").textContent = "Historial General de la Cabina";
@@ -1528,8 +1529,8 @@ function renderHistorico() {
               <span class="badge-status ${activeSlot.estado === 'no_tocar' ? 'badge-danger' : 'badge-success'}" style="font-size: 0.72rem;">
                 ${activeSlot.estado === 'no_tocar' ? '🔴 Ensayo Crítico (No Tocar)' : '🟢 Ensayo Actual en Curso'}
               </span>
-              <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; color: #38bdf8;">
-                BAHÍA ${currentHistoricoSlot}
+              <span style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: #38bdf8;">
+                ${currentHistoricoSlot}
               </span>
             </div>
             <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">
@@ -1567,7 +1568,7 @@ function renderHistorico() {
       <div style="text-align: center; padding: 2.2rem 1rem; color: var(--text-dim); background: rgba(15, 23, 42, 0.35); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
         <div style="font-size: 2.2rem; margin-bottom: 0.5rem; opacity: 0.6;">📜</div>
         <div style="font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem;">
-          No hay ensayos anteriores archivados en ${currentHistoricoSlot ? `la bahía ${currentHistoricoSlot}` : 'esta vista'}
+          No hay ensayos anteriores archivados en ${currentHistoricoSlot ? currentHistoricoSlot : 'esta vista'}
         </div>
         <p style="font-size: 0.78rem; max-width: 440px; margin: 0 auto 1rem auto; line-height: 1.4;">
           Cada vez que un ensayo finaliza y pulsas <strong>"Liberar"</strong>, el equipo queda archivado permanentemente aquí con sus fechas, responsable y fotos para auditoría.
@@ -1599,8 +1600,8 @@ function renderHistorico() {
       <div style="flex: 1; min-width: 0;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
           <div>
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; background: #334155; color: #38bdf8; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; margin-right: 0.4rem;">
-              BAHÍA ${item.slot_id}
+            <span style="font-family: var(--font-mono); font-size: 0.8rem; background: #334155; color: #38bdf8; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 800; margin-right: 0.4rem;">
+              ${item.slot_id}
             </span>
             <strong style="font-size: 1rem; color: #fff;">${item.equipo || 'Sin nombre'}</strong>
             <span style="color: var(--text-dim); font-size: 0.85rem; margin-left: 0.4rem;">· ${item.modelo || 'Modelo N/D'}</span>
