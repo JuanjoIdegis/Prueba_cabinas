@@ -153,7 +153,7 @@
     "A1": {
       "puesto": "A",
       "slot": 1,
-      "estado": "libre",
+      "estado": "en_uso_disponible",
       "equipo": "",
       "modelo": "",
       "sw": "",
@@ -166,7 +166,8 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T11:26:41.979Z"
+      "updated_at": "2026-09-04T11:27:55.004Z",
+      "slot_id": "A1"
     },
     "A2": {
       "puesto": "A",
