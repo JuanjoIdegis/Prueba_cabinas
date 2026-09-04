@@ -415,7 +415,7 @@ const Store = {
     this.notify();
 
     // Guardar en GitHub
-    const syncResult = await this.saveToGitHub(`Actualizar bahía ${slotId} (${slotData.equipo || slotData.estado})`);
+    const syncResult = await this.saveToGitHub(`Actualizar ${slotId} (${slotData.equipo || slotData.estado})`);
 
     // Intentar también servidor local si está corriendo
     try {
@@ -492,7 +492,7 @@ const Store = {
     localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
     this.notify();
 
-    const syncResult = await this.saveToGitHub(`Archivar e histórico bahía ${slotId} (${prev.equipo || 'Libre'})`);
+    const syncResult = await this.saveToGitHub(`Archivar e histórico ${slotId} (${prev.equipo || 'Libre'})`);
 
     try {
       fetch("/api/equipos/liberar", {
@@ -520,7 +520,7 @@ const Store = {
 
     localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
     this.notify();
-    return await this.saveToGitHub(`Datalogger ${isConnected ? 'conectado' : 'desconectado'} en bahía ${slotId}`);
+    return await this.saveToGitHub(`Datalogger ${isConnected ? 'conectado' : 'desconectado'} en ${slotId}`);
   },
 
   trackEquipment(query) {
@@ -649,7 +649,7 @@ const Store = {
     const tracking = this.trackEquipment(equipmentName);
     if (!tracking || tracking.totalCount === 0) return null;
 
-    const headers = ["Tipo Registro", "Planta", "Puesto", "Bahía", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre / Estado", "Descripción"];
+    const headers = ["Tipo Registro", "Planta", "Puesto", "ID", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Datalogger", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre / Estado", "Descripción"];
     const rows = [];
 
     tracking.activeLocations.forEach(a => {
@@ -663,6 +663,7 @@ const Store = {
         `"${(a.sw || '').replace(/"/g, '""')}"`,
         `"${(a.validacion || '').replace(/"/g, '""')}"`,
         `"${(a.iot || '').replace(/"/g, '""')}"`,
+        a.datalogger ? "SÍ" : "NO",
         `"${(a.prueba || '').replace(/"/g, '""')}"`,
         `"${(a.responsable || '').replace(/"/g, '""')}"`,
         a.f_inicio || "",
@@ -683,6 +684,7 @@ const Store = {
         `"${(h.sw || '').replace(/"/g, '""')}"`,
         `"${(h.validacion || '').replace(/"/g, '""')}"`,
         `"${(h.iot || '').replace(/"/g, '""')}"`,
+        h.datalogger ? "SÍ" : "NO",
         `"${(h.prueba || '').replace(/"/g, '""')}"`,
         `"${(h.responsable || '').replace(/"/g, '""')}"`,
         h.f_inicio || "",
@@ -699,7 +701,7 @@ const Store = {
     const hist = this.data.historico || [];
     if (hist.length === 0) return null;
 
-    const headers = ["Puesto", "Bahía", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre", "Fecha Registro", "Descripción"];
+    const headers = ["Puesto", "ID", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Datalogger", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre", "Fecha Registro", "Descripción"];
     const rows = hist.map(h => [
       h.puesto || "",
       h.slot_id || "",
@@ -708,6 +710,7 @@ const Store = {
       `"${(h.sw || "").replace(/"/g, '""')}"`,
       `"${(h.validacion || "").replace(/"/g, '""')}"`,
       `"${(h.iot || "").replace(/"/g, '""')}"`,
+      h.datalogger ? "SÍ" : "NO",
       `"${(h.prueba || "").replace(/"/g, '""')}"`,
       `"${(h.responsable || "").replace(/"/g, '""')}"`,
       h.f_inicio || "",
