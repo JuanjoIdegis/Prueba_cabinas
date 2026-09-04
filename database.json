@@ -22,7 +22,7 @@
     "A1": {
       "puesto": "A",
       "slot": 1,
-      "estado": "en_uso_disponible",
+      "estado": "libre",
       "equipo": "",
       "modelo": "",
       "sw": "",
@@ -34,8 +34,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T09:39:21.597Z",
-      "slot_id": "A1"
+      "updated_at": "2026-09-04T09:39:34.924Z"
     },
     "A2": {
       "puesto": "A",
@@ -1265,7 +1264,30 @@
       ]
     }
   },
-  "historico": [],
+  "historico": [
+    {
+      "id": "hist_1788514774924",
+      "slot_id": "A1",
+      "puesto": "A",
+      "puesto_nombre": "Puesto A",
+      "planta_id": "zona1",
+      "planta_nombre": "Zona 1: Cabinas Test",
+      "slot": 1,
+      "equipo": "Equipo en prueba",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "Ensayo",
+      "responsable": "No especificado",
+      "f_inicio": "",
+      "f_final": "2026-09-04",
+      "descripcion": "",
+      "imagen": "",
+      "motivo_cierre": "Ensayo finalizado / Liberado",
+      "fecha_registro": "2026-09-04T09:39:34.924Z"
+    }
+  ],
   "plantas": [
     {
       "id": "zona1",
