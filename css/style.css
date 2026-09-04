@@ -258,48 +258,125 @@ body {
 }
 
 .plantas-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  background: rgba(15, 23, 42, 0.65);
-  padding: 0.5rem 0.8rem;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 0.45rem 0.8rem;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.zone-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.zone-dropdown-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.zone-select-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  letter-spacing: 0.05em;
+}
+
+.zone-select-dropdown {
+  background: rgba(11, 15, 25, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  max-width: 250px;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease;
+}
+
+.zone-select-dropdown:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.zone-select-dropdown option {
+  background: #0f172a;
+  color: #fff;
+  padding: 0.5rem;
 }
 
 .plantas-tabs {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  padding: 0.15rem 0;
+}
+
+.plantas-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .plant-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.1rem;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
   border-radius: var(--radius-md);
-  font-size: 0.86rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
-  background: transparent;
-  color: var(--text-dim);
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
 }
 
 .plant-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .plant-btn.active {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(99, 102, 241, 0.25));
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.3));
   color: #fff;
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+  font-weight: 700;
+}
+
+.plant-btn .tab-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.08rem 0.38rem;
+  border-radius: var(--radius-full);
+  color: #94a3b8;
+}
+
+.plant-btn.active .tab-badge {
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.zone-edit-action {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .tabs-puestos {
@@ -1413,4 +1490,125 @@ body {
   0% { outline: 4px solid #38bdf8; box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); transform: scale(1.02); }
   50% { outline: 4px solid #38bdf8; box-shadow: 0 0 35px rgba(56, 189, 248, 0.9); transform: scale(1.02); }
   100% { outline: none; box-shadow: none; transform: scale(1); }
+}
+
+/* ==========================================================================
+   ESTILOS PARA VISTA E IMPRESIÓN DE CARTELES QR (A4)
+   ========================================================================== */
+
+.print-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.2rem;
+  padding: 0.5rem 0;
+}
+
+@media print {
+  /* 1. Resetear fondo a blanco puro y texto oscuro */
+  html, body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  }
+
+  /* 2. Ocultar todos los elementos de la interfaz interactiva */
+  .app-header,
+  .control-bar,
+  .main-content,
+  .toast-container,
+  .modal-overlay:not(#qr-print-modal),
+  .modal-header,
+  .modal-footer,
+  .print-modal-controls,
+  .close-btn,
+  button,
+  nav,
+  header {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* 3. El modal se transforma en documento plano de impresión */
+  #qr-print-modal {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    z-index: 1 !important;
+  }
+
+  #qr-print-modal .modal-window {
+    display: block !important;
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  #qr-print-modal .modal-body {
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  /* 4. Disposición en hoja A4 (2 carteles de puesto por fila) */
+  #print-sheet-container {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .print-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12mm !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    padding: 4mm !important;
+  }
+
+  /* 5. Tarjeta de Cartel QR */
+  .print-card {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 2px dashed #0f172a !important;
+    border-radius: 10px !important;
+    padding: 10mm 6mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .print-card canvas,
+  .print-card img {
+    margin: 6mm auto !important;
+    display: block !important;
+    max-width: 140px !important;
+    max-height: 140px !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
 }
