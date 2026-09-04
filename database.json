@@ -153,21 +153,20 @@
     "A1": {
       "puesto": "A",
       "slot": 1,
-      "estado": "en_uso_disponible",
+      "estado": "libre",
       "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
       "iot": "",
-      "datalogger": true,
+      "datalogger": false,
       "prueba": "",
       "responsable": "",
       "f_inicio": "",
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T11:28:17.298Z",
-      "slot_id": "A1"
+      "updated_at": "2026-09-04T11:28:40.127Z"
     },
     "A2": {
       "puesto": "A",
@@ -1277,6 +1276,29 @@
     }
   },
   "historico": [
+    {
+      "id": "hist_1788521320127",
+      "slot_id": "A1",
+      "puesto": "A",
+      "puesto_nombre": "Puesto A",
+      "planta_id": "zona1",
+      "planta_nombre": "Zona 1: Cabinas Test",
+      "slot": 1,
+      "equipo": "Equipo en prueba",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "datalogger": true,
+      "prueba": "Ensayo",
+      "responsable": "No especificado",
+      "f_inicio": "",
+      "f_final": "2026-09-04",
+      "descripcion": "",
+      "imagen": "",
+      "motivo_cierre": "Ensayo finalizado / Liberado",
+      "fecha_registro": "2026-09-04T11:28:40.127Z"
+    },
     {
       "id": "hist_1788521201979",
       "slot_id": "A1",
