@@ -1,5 +1,136 @@
 {
   "version": "2.0.0",
+  "plantas": [
+    {
+      "id": "zona1",
+      "nombre": "Zona 1: Cabinas Test",
+      "icono": "⚡",
+      "puestos": [
+        {
+          "id": "A",
+          "nombre": "Puesto A",
+          "slotsCount": 4
+        },
+        {
+          "id": "B",
+          "nombre": "Puesto B",
+          "slotsCount": 4
+        },
+        {
+          "id": "C",
+          "nombre": "Puesto C",
+          "slotsCount": 4
+        },
+        {
+          "id": "D",
+          "nombre": "Puesto D",
+          "slotsCount": 4
+        },
+        {
+          "id": "E",
+          "nombre": "Puesto E",
+          "slotsCount": 4
+        },
+        {
+          "id": "F",
+          "nombre": "Puesto F",
+          "slotsCount": 4
+        },
+        {
+          "id": "G",
+          "nombre": "Puesto G",
+          "slotsCount": 4
+        },
+        {
+          "id": "H",
+          "nombre": "Puesto H",
+          "slotsCount": 4
+        },
+        {
+          "id": "I",
+          "nombre": "Puesto I",
+          "slotsCount": 4
+        },
+        {
+          "id": "J",
+          "nombre": "Puesto J",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona2",
+      "nombre": "Zona 2: Planta Piloto Cabina test",
+      "icono": "🧪",
+      "puestos": [
+        {
+          "id": "PCAB",
+          "nombre": "Piloto Cabina Test",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona3",
+      "nombre": "Zona 3: Planta piloto Laboratorio",
+      "icono": "🔬",
+      "puestos": [
+        {
+          "id": "PLAB",
+          "nombre": "Piloto Laboratorio",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona4",
+      "nombre": "Zona 4: Planta Piloto Cellguard 1",
+      "icono": "🔋",
+      "puestos": [
+        {
+          "id": "CG1",
+          "nombre": "Planta Piloto Cellguard 1",
+          "slotsCount": 5
+        }
+      ]
+    },
+    {
+      "id": "zona5",
+      "nombre": "Zona 5: Planta Piloto Cellguard 2",
+      "icono": "🔋",
+      "puestos": [
+        {
+          "id": "CG2",
+          "nombre": "Planta Piloto Cellguard 2",
+          "slotsCount": 5
+        }
+      ]
+    },
+    {
+      "id": "zona6",
+      "nombre": "Zona 6: Planta Piloto EC (Golpes Ariete 1)",
+      "icono": "🌊",
+      "puestos": [
+        {
+          "id": "EC1",
+          "nombre": "Planta Piloto EC (Golpes Ariete 1)",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona7",
+      "nombre": "Zona 7: Planta Piloto EC (Golpes Ariete 2)",
+      "icono": "🌊",
+      "puestos": [
+        {
+          "id": "EC2",
+          "nombre": "Planta Piloto EC (Golpes Ariete 2)",
+          "slotsCount": 4
+        }
+      ]
+    }
+  ],
   "puestos": [
     "A",
     "B",
@@ -34,7 +165,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T10:05:48.886Z"
+      "updated_at": ""
     },
     "A2": {
       "puesto": "A",
@@ -1142,303 +1273,5 @@
       "updated_at": ""
     }
   },
-  "telemetria_puestos": {
-    "A": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "B": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "C": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "D": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "E": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "F": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    }
-  },
-  "historico": [
-    {
-      "id": "hist_1788516348886",
-      "slot_id": "A1",
-      "puesto": "A",
-      "puesto_nombre": "Puesto A",
-      "planta_id": "zona1",
-      "planta_nombre": "Zona 1: Cabinas Test",
-      "slot": 1,
-      "equipo": "TS3",
-      "modelo": "25",
-      "sw": "188",
-      "validacion": "2.1",
-      "iot": "177A",
-      "prueba": "sadjfsladkfjaslk",
-      "responsable": "Juanjo",
-      "f_inicio": "",
-      "f_final": "2026-09-04",
-      "descripcion": "sdfasfasdfafasdfasdfasdfsa",
-      "imagen": "",
-      "motivo_cierre": "Ensayo finalizado / Liberado",
-      "fecha_registro": "2026-09-04T10:05:48.886Z"
-    },
-    {
-      "id": "hist_1788514774924",
-      "slot_id": "A1",
-      "puesto": "A",
-      "puesto_nombre": "Puesto A",
-      "planta_id": "zona1",
-      "planta_nombre": "Zona 1: Cabinas Test",
-      "slot": 1,
-      "equipo": "Equipo en prueba",
-      "modelo": "",
-      "sw": "",
-      "validacion": "",
-      "iot": "",
-      "prueba": "Ensayo",
-      "responsable": "No especificado",
-      "f_inicio": "",
-      "f_final": "2026-09-04",
-      "descripcion": "",
-      "imagen": "",
-      "motivo_cierre": "Ensayo finalizado / Liberado",
-      "fecha_registro": "2026-09-04T09:39:34.924Z"
-    }
-  ],
-  "plantas": [
-    {
-      "id": "zona1",
-      "nombre": "Zona 1: Cabinas Test",
-      "icono": "⚡",
-      "puestos": [
-        {
-          "id": "A",
-          "nombre": "Puesto A",
-          "slotsCount": 4
-        },
-        {
-          "id": "B",
-          "nombre": "Puesto B",
-          "slotsCount": 4
-        },
-        {
-          "id": "C",
-          "nombre": "Puesto C",
-          "slotsCount": 4
-        },
-        {
-          "id": "D",
-          "nombre": "Puesto D",
-          "slotsCount": 4
-        },
-        {
-          "id": "E",
-          "nombre": "Puesto E",
-          "slotsCount": 4
-        },
-        {
-          "id": "F",
-          "nombre": "Puesto F",
-          "slotsCount": 4
-        },
-        {
-          "id": "G",
-          "nombre": "Puesto G",
-          "slotsCount": 4
-        },
-        {
-          "id": "H",
-          "nombre": "Puesto H",
-          "slotsCount": 4
-        },
-        {
-          "id": "I",
-          "nombre": "Puesto I",
-          "slotsCount": 4
-        },
-        {
-          "id": "J",
-          "nombre": "Puesto J",
-          "slotsCount": 4
-        }
-      ]
-    },
-    {
-      "id": "zona2",
-      "nombre": "Zona 2: Planta Piloto Cabina test",
-      "icono": "🧪",
-      "puestos": [
-        {
-          "id": "PCAB",
-          "nombre": "Piloto Cabina Test",
-          "slotsCount": 4
-        }
-      ]
-    },
-    {
-      "id": "zona3",
-      "nombre": "Zona 3: Planta piloto Laboratorio",
-      "icono": "🔬",
-      "puestos": [
-        {
-          "id": "PLAB",
-          "nombre": "Piloto Laboratorio",
-          "slotsCount": 4
-        }
-      ]
-    },
-    {
-      "id": "zona4",
-      "nombre": "Zona 4: Planta Piloto Cellguard 1",
-      "icono": "🔋",
-      "puestos": [
-        {
-          "id": "CG1",
-          "nombre": "Planta Piloto Cellguard 1",
-          "slotsCount": 5
-        }
-      ]
-    },
-    {
-      "id": "zona5",
-      "nombre": "Zona 5: Planta Piloto Cellguard 2",
-      "icono": "🔋",
-      "puestos": [
-        {
-          "id": "CG2",
-          "nombre": "Planta Piloto Cellguard 2",
-          "slotsCount": 5
-        }
-      ]
-    },
-    {
-      "id": "zona6",
-      "nombre": "Zona 6: Planta Piloto EC (Golpes Ariete 1)",
-      "icono": "🌊",
-      "puestos": [
-        {
-          "id": "EC1",
-          "nombre": "Planta Piloto EC (Golpes Ariete 1)",
-          "slotsCount": 4
-        }
-      ]
-    },
-    {
-      "id": "zona7",
-      "nombre": "Zona 7: Planta Piloto EC (Golpes Ariete 2)",
-      "icono": "🌊",
-      "puestos": [
-        {
-          "id": "EC2",
-          "nombre": "Planta Piloto EC (Golpes Ariete 2)",
-          "slotsCount": 4
-        }
-      ]
-    }
-  ]
+  "historico": []
 }
