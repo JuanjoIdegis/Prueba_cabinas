@@ -32,8 +32,8 @@ const QRGenerator = {
       puestosToPrint = Store.getPuestosByPlanta(type);
     } else if (type === "cabina") {
       puestosToPrint = Store.getPuestosByPlanta("zona1");
-    } else if (type === "piloto") {
-      puestosToPrint = (Store.data.puestos || []).filter(pid => pid !== "A" && pid !== "B" && pid !== "C" && pid !== "D" && pid !== "E" && pid !== "F" && pid !== "G" && pid !== "H" && pid !== "I" && pid !== "J").map(pid => Store.getPuestoInfo(pid));
+    } else if (type === "piloto" || type === "pilotos") {
+      puestosToPrint = (Store.data.puestos || []).filter(pid => !["A","B","C","D","E","F","G","H","I","J"].includes(pid)).map(pid => Store.getPuestoInfo(pid));
     } else {
       puestosToPrint = (Store.data.puestos || []).map(pid => Store.getPuestoInfo(pid));
     }
@@ -141,5 +141,106 @@ const QRGenerator = {
     }
 
     container.appendChild(sheet);
+  },
+
+  printDirectly() {
+    window.print();
+  },
+
+  openInNewPrintWindow() {
+    const container = document.getElementById("print-sheet-container");
+    if (!container || !container.innerHTML.trim()) {
+      alert("No hay carteles QR generados para imprimir.");
+      return;
+    }
+
+    const printWin = window.open("", "_blank");
+    if (!printWin) {
+      // Si el navegador bloquea la ventana emergente, recurrir al print normal
+      window.print();
+      return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Carteles QR - Cabina y Plantas Fluidra</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      padding: 8mm;
+    }
+    .print-header {
+      text-align: center;
+      margin-bottom: 8mm;
+      padding-bottom: 3mm;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .print-header h1 {
+      font-size: 15pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .print-header p {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 2mm;
+    }
+    .print-sheet {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10mm;
+    }
+    .print-card {
+      border: 2px dashed #0f172a !important;
+      padding: 10mm 6mm !important;
+      border-radius: 10px !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      text-align: center !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .print-card canvas, .print-card img {
+      margin: 6mm auto !important;
+      display: block !important;
+      max-width: 140px !important;
+      max-height: 140px !important;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <h1>FLUIDRA LAB · Carteles QR para Paneles</h1>
+    <p>Pega cada cartel en su puesto o bahía correspondiente para escanear con la app</p>
+  </div>
+  ${container.innerHTML}
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 350);
+    };
+  <\/script>
+</body>
+</html>
+    `;
+
+    printWin.document.open();
+    printWin.document.write(htmlContent);
+    printWin.document.close();
   }
 };
