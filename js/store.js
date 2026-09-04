@@ -91,11 +91,52 @@ const Store = {
   },
 
   async init() {
-    // 1. Cargar desde caché local de inmediato (pantalla instantánea)
+    // 1. Cargar desde caché local de inmediato con migración automática
     const cached = localStorage.getItem("cabina_equipos_db");
     if (cached) {
       try {
-        this.data = JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        const defaultPlantas = this.data.plantas;
+        const defaultPuestos = this.data.puestos;
+
+        // Si el caché local tiene menos de 2 plantas o faltan los nuevos puestos (G-J, CG, EC)
+        if (!parsed.plantas || !Array.isArray(parsed.plantas) || parsed.plantas.length < 2 || !parsed.puestos || parsed.puestos.length < 14) {
+          console.log("Migrando caché local a versión 1.2.0 multi-planta...");
+          parsed.plantas = defaultPlantas;
+          parsed.puestos = defaultPuestos;
+          parsed.version = "1.2.0";
+          if (!parsed.slots) parsed.slots = {};
+
+          defaultPlantas.forEach(pl => {
+            pl.puestos.forEach(p => {
+              for (let s = 1; s <= (p.slotsCount || 4); s++) {
+                const sId = (pl.id === "cabina") ? `${p.id}${s}` : `${p.id}_${s}`;
+                if (!parsed.slots[sId]) {
+                  parsed.slots[sId] = {
+                    puesto: p.id,
+                    slot: s,
+                    estado: "libre",
+                    equipo: "",
+                    modelo: "",
+                    sw: "",
+                    validacion: "",
+                    iot: "",
+                    prueba: "",
+                    responsable: "",
+                    f_inicio: "",
+                    f_final: "",
+                    descripcion: "",
+                    imagen: "",
+                    updated_at: ""
+                  };
+                }
+              }
+            });
+          });
+          localStorage.setItem("cabina_equipos_db", JSON.stringify(parsed));
+        }
+
+        this.data = parsed;
         this.notify();
       } catch (e) {
         console.warn("Caché local corrupto:", e);
@@ -243,8 +284,33 @@ const Store = {
     }
   },
 
+  _parseSlotId(slotId, slotData = null) {
+    let puesto = slotData?.puesto;
+    let slotNum = slotData?.slot;
+    if (!puesto || !slotNum) {
+      if (slotId.includes("_")) {
+        const parts = slotId.split("_");
+        puesto = parts[0];
+        slotNum = parseInt(parts[1], 10) || 1;
+      } else {
+        puesto = slotId.slice(0, -1);
+        slotNum = parseInt(slotId.slice(-1), 10) || 1;
+      }
+    }
+    const puestoInfo = this.getPuestoInfo(puesto);
+    return {
+      puesto,
+      slot: slotNum,
+      puesto_nombre: puestoInfo.nombre,
+      planta_id: puestoInfo.plantaId,
+      planta_nombre: puestoInfo.plantaNombre,
+      planta_icono: puestoInfo.plantaIcono
+    };
+  },
+
   async updateSlot(slotData) {
     const slotId = slotData.slot_id || `${slotData.puesto}${slotData.slot}`;
+    const parsed = this._parseSlotId(slotId, slotData);
 
     if (!this.data.slots) this.data.slots = {};
     const prev = this.data.slots[slotId];
@@ -255,8 +321,11 @@ const Store = {
       this.data.historico.unshift({
         id: "hist_" + Date.now(),
         slot_id: slotId,
-        puesto: slotId[0],
-        slot: parseInt(slotId.substring(1), 10),
+        puesto: parsed.puesto,
+        puesto_nombre: parsed.puesto_nombre,
+        planta_id: parsed.planta_id,
+        planta_nombre: parsed.planta_nombre,
+        slot: parsed.slot,
         equipo: prev.equipo,
         modelo: prev.modelo || "",
         sw: prev.sw || "",
@@ -276,6 +345,8 @@ const Store = {
     this.data.slots[slotId] = {
       ...this.data.slots[slotId],
       ...slotData,
+      puesto: parsed.puesto,
+      slot: parsed.slot,
       updated_at: new Date().toISOString()
     };
 
@@ -301,6 +372,7 @@ const Store = {
     if (!this.data.slots || !this.data.slots[slotId]) return;
 
     const prev = this.data.slots[slotId];
+    const parsed = this._parseSlotId(slotId, prev);
 
     // Archivar automáticamente en el histórico si estaba en uso, no tocar o tenía datos
     const estabaOcupado = prev && (
@@ -315,8 +387,11 @@ const Store = {
       this.data.historico.unshift({
         id: "hist_" + Date.now(),
         slot_id: slotId,
-        puesto: slotId[0],
-        slot: parseInt(slotId.substring(1), 10),
+        puesto: parsed.puesto,
+        puesto_nombre: parsed.puesto_nombre,
+        planta_id: parsed.planta_id,
+        planta_nombre: parsed.planta_nombre,
+        slot: parsed.slot,
         equipo: (prev.equipo && prev.equipo.trim()) || (prev.estado === "no_tocar" ? "Ensayo Crítico (No Tocar)" : "Equipo en prueba"),
         modelo: prev.modelo || "",
         sw: prev.sw || "",
@@ -333,12 +408,9 @@ const Store = {
       });
     }
 
-    const puesto = slotId[0];
-    const slotNum = parseInt(slotId.substring(1), 10);
-
     this.data.slots[slotId] = {
-      puesto,
-      slot: slotNum,
+      puesto: parsed.puesto,
+      slot: parsed.slot,
       estado: "libre",
       equipo: "",
       modelo: "",
@@ -368,6 +440,178 @@ const Store = {
     } catch (e) {}
 
     return syncResult;
+  },
+
+  trackEquipment(query) {
+    if (!query || !query.trim()) return null;
+    const q = query.trim().toLowerCase();
+
+    // 1. Buscar en bahías activas en todas las plantas
+    const activeLocations = [];
+    if (this.data.slots) {
+      Object.entries(this.data.slots).forEach(([slotId, slot]) => {
+        if (!slot || slot.estado === "libre" && !slot.equipo) return;
+        const matches = (
+          (slot.equipo && slot.equipo.toLowerCase().includes(q)) ||
+          (slot.modelo && slot.modelo.toLowerCase().includes(q)) ||
+          (slot.sw && slot.sw.toLowerCase().includes(q)) ||
+          (slot.iot && slot.iot.toLowerCase().includes(q)) ||
+          (slot.prueba && slot.prueba.toLowerCase().includes(q)) ||
+          (slot.responsable && slot.responsable.toLowerCase().includes(q))
+        );
+        if (matches) {
+          const parsed = this._parseSlotId(slotId, slot);
+          activeLocations.push({
+            slot_id: slotId,
+            puesto: parsed.puesto,
+            puesto_nombre: parsed.puesto_nombre,
+            planta_id: parsed.planta_id,
+            planta_nombre: parsed.planta_nombre,
+            planta_icono: parsed.planta_icono,
+            slot_numero: parsed.slot,
+            estado: slot.estado || "en_uso_disponible",
+            equipo: slot.equipo,
+            modelo: slot.modelo,
+            sw: slot.sw,
+            validacion: slot.validacion,
+            iot: slot.iot,
+            prueba: slot.prueba,
+            responsable: slot.responsable,
+            f_inicio: slot.f_inicio,
+            f_final: slot.f_final,
+            descripcion: slot.descripcion,
+            imagen: slot.imagen,
+            is_active: true
+          });
+        }
+      });
+    }
+
+    // 2. Buscar en el histórico
+    const historyLocations = [];
+    if (this.data.historico && Array.isArray(this.data.historico)) {
+      this.data.historico.forEach(item => {
+        const matches = (
+          (item.equipo && item.equipo.toLowerCase().includes(q)) ||
+          (item.modelo && item.modelo.toLowerCase().includes(q)) ||
+          (item.sw && item.sw.toLowerCase().includes(q)) ||
+          (item.iot && item.iot.toLowerCase().includes(q)) ||
+          (item.prueba && item.prueba.toLowerCase().includes(q)) ||
+          (item.responsable && item.responsable.toLowerCase().includes(q)) ||
+          (item.slot_id && item.slot_id.toLowerCase().includes(q))
+        );
+        if (matches) {
+          const parsed = this._parseSlotId(item.slot_id, item);
+          historyLocations.push({
+            ...item,
+            puesto_nombre: item.puesto_nombre || parsed.puesto_nombre,
+            planta_id: item.planta_id || parsed.planta_id,
+            planta_nombre: item.planta_nombre || parsed.planta_nombre,
+            planta_icono: item.planta_icono || parsed.planta_icono,
+            is_active: false
+          });
+        }
+      });
+    }
+
+    return {
+      query,
+      activeLocations,
+      historyLocations,
+      totalCount: activeLocations.length + historyLocations.length
+    };
+  },
+
+  getAllKnownEquipments() {
+    const map = new Map();
+    // Equipos en bahías activas
+    if (this.data.slots) {
+      Object.entries(this.data.slots).forEach(([slotId, s]) => {
+        if (s && s.equipo && s.equipo.trim() && s.estado !== "libre") {
+          const key = s.equipo.trim();
+          if (!map.has(key)) {
+            const parsed = this._parseSlotId(slotId, s);
+            map.set(key, {
+              nombre: key,
+              modelo: s.modelo || "",
+              is_connected: true,
+              slot_id: slotId,
+              planta_nombre: parsed.planta_nombre,
+              puesto_nombre: parsed.puesto_nombre
+            });
+          }
+        }
+      });
+    }
+    // Equipos en histórico
+    if (this.data.historico && Array.isArray(this.data.historico)) {
+      this.data.historico.forEach(h => {
+        if (h && h.equipo && h.equipo.trim()) {
+          const key = h.equipo.trim();
+          if (!map.has(key)) {
+            map.set(key, {
+              nombre: key,
+              modelo: h.modelo || "",
+              is_connected: false,
+              slot_id: h.slot_id,
+              planta_nombre: h.planta_nombre || "Cabina",
+              puesto_nombre: h.puesto_nombre || `Puesto ${h.puesto}`
+            });
+          }
+        }
+      });
+    }
+    return Array.from(map.values());
+  },
+
+  exportEquipmentAuditCSV(equipmentName) {
+    const tracking = this.trackEquipment(equipmentName);
+    if (!tracking || tracking.totalCount === 0) return null;
+
+    const headers = ["Tipo Registro", "Planta", "Puesto", "Bahía", "Equipo", "Modelo", "Versión SW", "Validación", "IoT", "Tipo de Prueba", "Responsable", "Fecha Inicio", "Fecha Fin", "Motivo Cierre / Estado", "Descripción"];
+    const rows = [];
+
+    tracking.activeLocations.forEach(a => {
+      rows.push([
+        "ACTUALMENTE EN USO",
+        `"${(a.planta_nombre || '').replace(/"/g, '""')}"`,
+        `"${(a.puesto_nombre || a.puesto || '').replace(/"/g, '""')}"`,
+        a.slot_id || "",
+        `"${(a.equipo || '').replace(/"/g, '""')}"`,
+        `"${(a.modelo || '').replace(/"/g, '""')}"`,
+        `"${(a.sw || '').replace(/"/g, '""')}"`,
+        `"${(a.validacion || '').replace(/"/g, '""')}"`,
+        `"${(a.iot || '').replace(/"/g, '""')}"`,
+        `"${(a.prueba || '').replace(/"/g, '""')}"`,
+        `"${(a.responsable || '').replace(/"/g, '""')}"`,
+        a.f_inicio || "",
+        a.f_final || "",
+        `"Activo (${a.estado || 'en_uso'})"`,
+        `"${(a.descripcion || '').replace(/"/g, '""')}"`
+      ]);
+    });
+
+    tracking.historyLocations.forEach(h => {
+      rows.push([
+        "HISTÓRICO",
+        `"${(h.planta_nombre || '').replace(/"/g, '""')}"`,
+        `"${(h.puesto_nombre || h.puesto || '').replace(/"/g, '""')}"`,
+        h.slot_id || "",
+        `"${(h.equipo || '').replace(/"/g, '""')}"`,
+        `"${(h.modelo || '').replace(/"/g, '""')}"`,
+        `"${(h.sw || '').replace(/"/g, '""')}"`,
+        `"${(h.validacion || '').replace(/"/g, '""')}"`,
+        `"${(h.iot || '').replace(/"/g, '""')}"`,
+        `"${(h.prueba || '').replace(/"/g, '""')}"`,
+        `"${(h.responsable || '').replace(/"/g, '""')}"`,
+        h.f_inicio || "",
+        h.f_final || "",
+        `"${(h.motivo_cierre || 'Liberado').replace(/"/g, '""')}"`,
+        `"${(h.descripcion || '').replace(/"/g, '""')}"`
+      ]);
+    });
+
+    return "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\r\n");
   },
 
   exportHistoricoCSV() {
