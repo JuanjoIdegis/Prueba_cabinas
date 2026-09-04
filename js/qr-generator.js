@@ -71,7 +71,7 @@ const QRGenerator = {
             ${targetUrl}
           </div>
           <div style="font-size: 0.72rem; color: #0284c7; font-weight: 600;">
-            Escanear para gestionar bahías 1 a ${p.slotsCount || 4}
+            Escanear para gestionar ${p.nombre}
           </div>
         `;
 
@@ -91,7 +91,7 @@ const QRGenerator = {
         }, 50);
       });
     } else {
-      // Modo por slots individuales de todas las plantas
+      // Modo por identificadores individuales de todas las plantas
       const allPuestos = (Store.data.puestos || []).map(pid => Store.getPuestoInfo(pid));
       allPuestos.forEach(p => {
         const count = p.slotsCount || 4;
@@ -117,9 +117,9 @@ const QRGenerator = {
 
           card.innerHTML = `
             <div style="font-size: 0.68rem; font-weight: 700; color: #475569;">FLUIDRA · ${p.plantaNombre || 'CABINA'}</div>
-            <div style="font-size: 1.3rem; font-weight: 800; font-family: monospace; line-height: 1.1;">BAHÍA ${slotId}</div>
+            <div style="font-size: 1.6rem; font-weight: 900; font-family: 'JetBrains Mono', monospace; line-height: 1.1; color: #0f172a;">${slotId}</div>
             <div id="qr-target-slot-${slotId}" style="margin: 0.3rem 0;"></div>
-            <div style="font-size: 0.65rem; color: #64748b;">${p.nombre} - Bahía ${s}</div>
+            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">${p.nombre} · ${slotId}</div>
           `;
 
           sheet.appendChild(card);
@@ -225,7 +225,7 @@ const QRGenerator = {
 <body>
   <div class="print-header">
     <h1>FLUIDRA LAB · Carteles QR para Paneles</h1>
-    <p>Pega cada cartel en su puesto o bahía correspondiente para escanear con la app</p>
+    <p>Pega cada cartel en su puesto o posición correspondiente para escanear con la app</p>
   </div>
   ${container.innerHTML}
   <script>
