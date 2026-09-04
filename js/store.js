@@ -5,9 +5,67 @@
 
 const Store = {
   data: {
-    version: "1.0.0",
-    puestos: ["A", "B", "C", "D", "E", "F"],
-    slots: {}
+    version: "1.2.0",
+    plantas: [
+      {
+        id: "cabina",
+        nombre: "Planta Cabina",
+        icono: "⚡",
+        puestos: [
+          { id: "A", nombre: "Puesto A", slotsCount: 4 },
+          { id: "B", nombre: "Puesto B", slotsCount: 4 },
+          { id: "C", nombre: "Puesto C", slotsCount: 4 },
+          { id: "D", nombre: "Puesto D", slotsCount: 4 },
+          { id: "E", nombre: "Puesto E", slotsCount: 4 },
+          { id: "F", nombre: "Puesto F", slotsCount: 4 },
+          { id: "G", nombre: "Puesto G", slotsCount: 4 },
+          { id: "H", nombre: "Puesto H", slotsCount: 4 },
+          { id: "I", nombre: "Puesto I", slotsCount: 4 },
+          { id: "J", nombre: "Puesto J", slotsCount: 4 }
+        ]
+      },
+      {
+        id: "piloto",
+        nombre: "Planta Piloto Laboratorio",
+        icono: "🔬",
+        puestos: [
+          { id: "CG1", nombre: "Planta Piloto Cellguard 1", slotsCount: 4 },
+          { id: "CG2", nombre: "Planta Piloto Cellguard 2", slotsCount: 4 },
+          { id: "EC1", nombre: "Planta Piloto EC (Golpes ariete) 1", slotsCount: 4 },
+          { id: "EC2", nombre: "Planta Piloto EC (Golpes ariete) 2", slotsCount: 4 }
+        ]
+      }
+    ],
+    puestos: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "CG1", "CG2", "EC1", "EC2"],
+    slots: {},
+    historico: []
+  },
+
+  getPlantas() {
+    return this.data.plantas || [];
+  },
+
+  getPuestosByPlanta(plantaId) {
+    const plantas = this.getPlantas();
+    const planta = plantas.find(p => p.id === plantaId);
+    return planta ? planta.puestos : [];
+  },
+
+  getPuestoInfo(puestoId) {
+    const plantas = this.getPlantas();
+    for (const pl of plantas) {
+      const p = pl.puestos.find(item => item.id === puestoId);
+      if (p) return { ...p, plantaId: pl.id, plantaNombre: pl.nombre, plantaIcono: pl.icono };
+    }
+    return { id: puestoId, nombre: `Puesto ${puestoId}`, slotsCount: 4, plantaId: "cabina", plantaNombre: "Planta Cabina", plantaIcono: "⚡" };
+  },
+
+  async updatePuestosConfig(updatedPlantas) {
+    this.data.plantas = updatedPlantas;
+    this.data.puestos = [].concat(...updatedPlantas.map(pl => pl.puestos.map(p => p.id)));
+    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this.notify();
+    return await this.saveToGitHub("Actualizar nombres y configuración de puestos");
   },
 
   githubConfig: {
@@ -166,6 +224,17 @@ const Store = {
         }
       });
       this.data.historico.sort((a, b) => new Date(b.fecha_registro || 0) - new Date(a.fecha_registro || 0));
+    }
+
+    // Sincronización de plantas y configuración de puestos
+    if (remoteData.plantas && Array.isArray(remoteData.plantas)) {
+      const plantasStrNew = JSON.stringify(remoteData.plantas);
+      const plantasStrOld = JSON.stringify(this.data.plantas || []);
+      if (plantasStrNew !== plantasStrOld) {
+        this.data.plantas = remoteData.plantas;
+        this.data.puestos = [].concat(...remoteData.plantas.map(pl => pl.puestos.map(p => p.id)));
+        hasChanges = true;
+      }
     }
 
     if (hasChanges) {
