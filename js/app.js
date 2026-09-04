@@ -391,10 +391,11 @@ function renderPuestoCard(puestoId) {
           <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; flex: 1; align-items: center;">
             ${baySummaries.map(b => {
               const label = b.equipo ? `${b.equipo}` : (b.estado === 'libre' ? 'Libre' : (b.estado === 'no_tocar' ? 'No Tocar' : 'En Uso'));
+              const displayName = (b.slotId && b.slotId.length <= 2) ? b.slotId : `B${b.slotNum}`;
               return `
                 <span class="bay-mini-pill ${b.estado}" title="Bahía ${b.slotId}: ${b.equipo || b.estado}">
                   <span class="dot ${b.estado}" style="width: 7px; height: 7px;"></span>
-                  <span><strong>B${b.slotNum}:</strong> ${escapeHtml(label.length > 20 ? label.slice(0, 18) + '...' : label)}</span>
+                  <span><strong>${displayName}:</strong> ${escapeHtml(label.length > 20 ? label.slice(0, 18) + '...' : label)}</span>
                 </span>
               `;
             }).join("")}
@@ -463,7 +464,7 @@ function renderSlotCard(slot, slotId) {
   return `
     <div class="slot-card state-${estado}" id="card-slot-${slotId}">
       <div class="slot-header">
-        <span class="slot-badge-num">BAHÍA ${slotId}</span>
+        <span class="slot-badge-num">${slotId}</span>
         <span class="slot-status-pill ${estado}">${statusLabel}</span>
       </div>
 
@@ -1519,20 +1520,75 @@ function renderHistorico() {
 
   if (countLabel) countLabel.textContent = `Registros encontrados: ${filtered.length} (Total en archivo: ${historico.length})`;
 
+  // Banner para mostrar el equipo conectado actualmente si estamos consultando una bahía específica
+  let activeSlotBannerHtml = "";
+  if (currentHistoricoSlot && Store.data.slots && Store.data.slots[currentHistoricoSlot]) {
+    const activeSlot = Store.data.slots[currentHistoricoSlot];
+    const isOccupied = (activeSlot.estado && activeSlot.estado !== "libre") || (activeSlot.equipo && activeSlot.equipo.trim());
+    if (isOccupied) {
+      activeSlotBannerHtml = `
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="badge-status ${activeSlot.estado === 'no_tocar' ? 'badge-danger' : 'badge-success'}" style="font-size: 0.72rem;">
+                ${activeSlot.estado === 'no_tocar' ? '🔴 Ensayo Crítico (No Tocar)' : '🟢 Ensayo Actual en Curso'}
+              </span>
+              <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; color: #38bdf8;">
+                BAHÍA ${currentHistoricoSlot}
+              </span>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">
+              Conectado desde: <strong>${activeSlot.f_inicio || 'En curso'}</strong>
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 0.8rem; align-items: flex-start; margin-top: 0.4rem;">
+            ${activeSlot.imagen ? `
+              <div style="width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);" onclick="openImageViewer('${activeSlot.imagen}', '${escapeHtml(activeSlot.equipo)}')">
+                <img src="${activeSlot.imagen}" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto actual" />
+              </div>
+            ` : ''}
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                ${escapeHtml(activeSlot.equipo || 'Equipo sin nombre')}
+                ${activeSlot.modelo ? `<span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">· ${escapeHtml(activeSlot.modelo)}</span>` : ''}
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
+                ${activeSlot.sw ? `<span class="meta-chip sw" style="font-size: 0.68rem;">SW: ${escapeHtml(activeSlot.sw)}</span>` : ''}
+                ${activeSlot.iot ? `<span class="meta-chip iot" style="font-size: 0.68rem;">IoT: ${escapeHtml(activeSlot.iot)}</span>` : ''}
+                ${activeSlot.responsable ? `<span class="meta-chip user" style="font-size: 0.68rem;">👤 ${escapeHtml(activeSlot.responsable)}</span>` : ''}
+                ${activeSlot.prueba ? `<span class="meta-chip" style="font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Ensayo: ${escapeHtml(activeSlot.prueba)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-dim);">
-        <div style="font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5;">📜</div>
-        <div style="font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem;">No hay registros históricos ${currentHistoricoSlot ? `para la bahía ${currentHistoricoSlot}` : ''}</div>
-        <p style="font-size: 0.8rem; max-width: 420px; margin: 0 auto;">
-          Cada vez que un equipo se desconecta (botón "Liberar") o se reemplaza por otro modelo en una bahía, se archiva aquí automáticamente con su foto, software, responsable y fechas.
+    container.innerHTML = activeSlotBannerHtml + `
+      <div style="text-align: center; padding: 2.2rem 1rem; color: var(--text-dim); background: rgba(15, 23, 42, 0.35); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; opacity: 0.6;">📜</div>
+        <div style="font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem;">
+          No hay ensayos anteriores archivados en ${currentHistoricoSlot ? `la bahía ${currentHistoricoSlot}` : 'esta vista'}
+        </div>
+        <p style="font-size: 0.78rem; max-width: 440px; margin: 0 auto 1rem auto; line-height: 1.4;">
+          Cada vez que un ensayo finaliza y pulsas <strong>"Liberar"</strong>, el equipo queda archivado permanentemente aquí con sus fechas, responsable y fotos para auditoría.
         </p>
+        <button class="btn btn-secondary btn-sm" onclick="filterHistoricoByPuesto('all')" style="font-size: 0.76rem;">
+          🌐 Ver Historial General de toda la Cabina
+        </button>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = filtered.map(item => `
+  const archiveHeader = activeSlotBannerHtml
+    ? `<h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.6rem; letter-spacing: 0.05em;">📜 Ensayos Anteriores Finalizados (${filtered.length})</h4>`
+    : "";
+
+  container.innerHTML = activeSlotBannerHtml + archiveHeader + filtered.map(item => `
     <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; display: flex; gap: 1rem; align-items: flex-start; transition: all 0.2s ease;">
       <!-- Thumbnail de Foto -->
       <div style="width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openImageViewer('${item.imagen || 'app/img/cabina_puesto_f.png'}', '${item.equipo}')">
