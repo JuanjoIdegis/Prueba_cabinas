@@ -159,14 +159,14 @@
       "sw": "",
       "validacion": "",
       "iot": "",
-      "datalogger": false,
+      "datalogger": true,
       "prueba": "",
       "responsable": "",
       "f_inicio": "",
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T11:27:55.004Z",
+      "updated_at": "2026-09-04T11:28:17.298Z",
       "slot_id": "A1"
     },
     "A2": {
