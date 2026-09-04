@@ -381,12 +381,15 @@ function renderSlotCard(slot, slotId) {
           <button class="btn-slot" onclick="openEditModal('${slotId}')">
             ✏️ Editar
           </button>
+          <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
+            🔎 Rastrear
+          </button>
           <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de esta bahía">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             QR
           </button>
           <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en esta bahía">
-            📜 Historial
+            📜 Bahía
           </button>
           <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y archivar en histórico">
             Liberar
@@ -827,6 +830,22 @@ function setupEventListeners() {
       searchQuery = e.target.value;
       renderPuestos();
     });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && searchInput.value.trim()) {
+        openTrackEquipmentModal(searchInput.value.trim());
+      }
+    });
+  }
+
+  // Buscador de rastreador global
+  const trackInput = document.getElementById("track-search-input");
+  if (trackInput) {
+    trackInput.addEventListener("input", () => {
+      performEquipmentTracking();
+    });
+    trackInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") performEquipmentTracking();
+    });
   }
 
   // Filtro de estados
@@ -899,6 +918,312 @@ function resetFilters() {
   renderApp();
 }
 
+/* ==========================================================================
+   RASTREADOR GLOBAL DE EQUIPOS (TRAZABILIDAD Y HISTORIAL DE PUESTOS)
+   ========================================================================== */
+let currentTrackedQuery = "";
+
+function openTrackEquipmentModal(initialQuery = "") {
+  const modal = document.getElementById("track-equipment-modal");
+  if (!modal) return;
+
+  const searchInput = document.getElementById("track-search-input");
+  renderTrackQuickChips();
+
+  if (initialQuery && initialQuery.trim()) {
+    if (searchInput) searchInput.value = initialQuery.trim();
+    currentTrackedQuery = initialQuery.trim();
+    performEquipmentTracking();
+  } else {
+    if (searchInput) searchInput.value = "";
+    currentTrackedQuery = "";
+    renderTrackResults(null);
+  }
+
+  modal.classList.add("active");
+  if (searchInput) {
+    setTimeout(() => searchInput.focus(), 150);
+  }
+}
+
+function closeTrackEquipmentModal() {
+  const modal = document.getElementById("track-equipment-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+function clearTrackSearch() {
+  const searchInput = document.getElementById("track-search-input");
+  if (searchInput) searchInput.value = "";
+  const clearBtn = document.getElementById("track-clear-btn");
+  if (clearBtn) clearBtn.style.display = "none";
+  currentTrackedQuery = "";
+  renderTrackQuickChips();
+  renderTrackResults(null);
+  if (searchInput) searchInput.focus();
+}
+
+function renderTrackQuickChips() {
+  const container = document.getElementById("track-quick-chips");
+  if (!container) return;
+
+  const known = Store.getAllKnownEquipments();
+  if (known.length === 0) {
+    container.innerHTML = `<span style="font-size: 0.72rem; color: var(--text-dim);">No hay equipos registrados aún</span>`;
+    return;
+  }
+
+  container.innerHTML = known.slice(0, 12).map(eq => `
+    <button class="eq-track-chip ${currentTrackedQuery.toLowerCase() === eq.nombre.toLowerCase() ? 'active' : ''}" onclick="selectTrackChip('${escapeHtml(eq.nombre)}')">
+      <span>${eq.is_connected ? '🟢' : '⚪'}</span>
+      <span>${escapeHtml(eq.nombre)}</span>
+      ${eq.modelo ? `<small style="opacity: 0.6;">(${escapeHtml(eq.modelo)})</small>` : ''}
+    </button>
+  `).join("");
+}
+
+function selectTrackChip(eqName) {
+  const input = document.getElementById("track-search-input");
+  if (input) input.value = eqName;
+  currentTrackedQuery = eqName;
+  performEquipmentTracking();
+}
+
+function performEquipmentTracking() {
+  const input = document.getElementById("track-search-input");
+  const clearBtn = document.getElementById("track-clear-btn");
+  const query = (input ? input.value : "").trim();
+  currentTrackedQuery = query;
+
+  if (clearBtn) clearBtn.style.display = query ? "block" : "none";
+
+  renderTrackQuickChips();
+
+  if (!query) {
+    renderTrackResults(null);
+    return;
+  }
+
+  const tracking = Store.trackEquipment(query);
+  renderTrackResults(tracking);
+}
+
+function renderTrackResults(tracking) {
+  const container = document.getElementById("track-results-container");
+  const summaryLabel = document.getElementById("track-results-summary");
+  const exportBtn = document.getElementById("btn-export-track-csv");
+
+  if (!container) return;
+
+  if (!tracking) {
+    if (exportBtn) exportBtn.style.display = "none";
+    if (summaryLabel) summaryLabel.textContent = "Escribe el nombre o modelo de un equipo para ver dónde ha estado y su estado actual.";
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-dim);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5;">🔎</div>
+        <div style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; color: #fff;">Rastreador y Auditoría de Equipos</div>
+        <p style="font-size: 0.85rem; max-width: 480px; margin: 0 auto; line-height: 1.5;">
+          Esta búsqueda revisa todos los puestos de <strong>Planta Cabina (A a J)</strong>, <strong>Planta Piloto (Cellguard y EC)</strong> y el <strong>Histórico Completo</strong> de ensayos anteriores.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  const { query, activeLocations, historyLocations, totalCount } = tracking;
+
+  if (totalCount === 0) {
+    if (exportBtn) exportBtn.style.display = "none";
+    if (summaryLabel) summaryLabel.textContent = `No se encontraron registros para "${query}".`;
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-dim);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.8rem; opacity: 0.5;">🔍❓</div>
+        <div style="font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; color: #fff;">Sin resultados para "${escapeHtml(query)}"</div>
+        <p style="font-size: 0.82rem; max-width: 440px; margin: 0 auto;">
+          No se ha encontrado ningún equipo conectado ni en el histórico que coincida con ese nombre, modelo o responsable.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  if (exportBtn) exportBtn.style.display = "block";
+  if (summaryLabel) {
+    summaryLabel.textContent = `Resultados para "${query}": ${activeLocations.length} bahía(s) activa(s) y ${historyLocations.length} estancia(s) archivada(s).`;
+  }
+
+  let html = "";
+
+  // 1. SECCIÓN: DÓNDE ESTÁ AHORA MISMO
+  html += `
+    <div style="margin-bottom: 0.5rem;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+        <span>📍</span>
+        <span>UBICACIÓN ACTUAL (EN ESTE MOMENTO)</span>
+      </h4>
+  `;
+
+  if (activeLocations.length > 0) {
+    activeLocations.forEach(loc => {
+      const isCritico = loc.estado === "no_tocar";
+      html += `
+        <div class="track-active-banner ${isCritico ? 'no_tocar' : ''}">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="font-size: 2rem;">${loc.planta_icono || '📍'}</div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-family: var(--font-mono); font-size: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; color: #38bdf8;">
+                  ${loc.planta_nombre} · ${loc.puesto_nombre} (Bahía ${loc.slot_id})
+                </span>
+                <span class="badge-status ${loc.estado === 'no_tocar' ? 'badge-danger' : 'badge-success'}" style="font-size: 0.72rem;">
+                  ${loc.estado === 'no_tocar' ? '🔴 No Tocar (Crítico)' : '🟢 En Uso'}
+                </span>
+              </div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: 0.2rem;">
+                ${escapeHtml(loc.equipo)}
+                ${loc.modelo ? `<span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">· ${escapeHtml(loc.modelo)}</span>` : ''}
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.35rem; font-size: 0.72rem;">
+                ${loc.sw ? `<span class="meta-chip sw">SW: ${escapeHtml(loc.sw)}</span>` : ''}
+                ${loc.iot ? `<span class="meta-chip iot">IoT: ${escapeHtml(loc.iot)}</span>` : ''}
+                ${loc.responsable ? `<span class="meta-chip user">👤 ${escapeHtml(loc.responsable)}</span>` : ''}
+                ${loc.f_inicio ? `<span class="meta-chip">📅 Conectado desde: ${loc.f_inicio}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="goToSlotAndHighlight('${loc.planta_id}', '${loc.slot_id}')" style="font-size: 0.8rem; padding: 0.45rem 0.9rem;">
+              👉 Ir al Puesto y Bahía
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    html += `
+      <div class="track-inactive-banner">
+        <span style="font-size: 1.4rem;">⚪</span>
+        <div>
+          <strong style="color: #fff; display: block; margin-bottom: 0.15rem;">Actualmente NO está conectado en ninguna bahía</strong>
+          <span>El equipo no se encuentra en uso activo en Planta Cabina ni en Planta Piloto. Consulta su historial abajo para ver dónde estuvo.</span>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+
+  // 2. SECCIÓN: HISTORIAL CRONOLÓGICO DE DÓNDE HA ESTADO
+  html += `
+    <div style="margin-top: 1rem;">
+      <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+        <span>📜</span>
+        <span>HISTORIAL DE PUESTOS Y ENSAYOS (${historyLocations.length} estancias registradas)</span>
+      </h4>
+  `;
+
+  if (historyLocations.length > 0) {
+    html += `<div class="track-timeline">`;
+    historyLocations.forEach(item => {
+      html += `
+        <div class="track-timeline-item">
+          <div class="track-timeline-node"></div>
+          <div class="track-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
+              <div>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; background: #1e293b; color: #38bdf8; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700; border: 1px solid rgba(56,189,248,0.25);">
+                  ${item.planta_nombre || 'Cabina'} · ${item.puesto_nombre || `Puesto ${item.puesto}`} · Bahía ${item.slot_id}
+                </span>
+                <strong style="font-size: 0.95rem; color: #fff; margin-left: 0.4rem;">${escapeHtml(item.equipo || 'Equipo')}</strong>
+                ${item.modelo ? `<span style="color: var(--text-dim); font-size: 0.82rem;">· ${escapeHtml(item.modelo)}</span>` : ''}
+              </div>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">
+                Archivado: ${item.fecha_registro ? item.fecha_registro.slice(0, 10) : '--'}
+              </span>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0;">
+              ${item.sw ? `<span class="meta-chip sw">SW: ${escapeHtml(item.sw)}</span>` : ''}
+              ${item.iot ? `<span class="meta-chip iot">IoT: ${escapeHtml(item.iot)}</span>` : ''}
+              ${item.responsable ? `<span class="meta-chip user">👤 ${escapeHtml(item.responsable)}</span>` : ''}
+              ${item.prueba ? `<span class="meta-chip" style="background: rgba(56,189,248,0.12); color: #38bdf8;">Ensayo: ${escapeHtml(item.prueba)}</span>` : ''}
+              ${item.motivo_cierre ? `<span class="meta-chip" style="background: rgba(244,63,94,0.12); color: #f43f5e;">Cierre: ${escapeHtml(item.motivo_cierre)}</span>` : ''}
+            </div>
+
+            ${item.descripcion ? `
+              <div style="font-size: 0.75rem; color: var(--text-muted); background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: 4px; border-left: 2px solid rgba(255,255,255,0.15); margin-bottom: 0.4rem;">
+                ${escapeHtml(item.descripcion)}
+              </div>
+            ` : ''}
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-dim); margin-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.35rem;">
+              <span>📅 Período de estancia: <strong>${item.f_inicio || '--'}</strong> al <strong>${item.f_final || '--'}</strong></span>
+              ${item.imagen ? `
+                <button class="btn-slot" onclick="openImageViewer('${item.imagen}', '${escapeHtml(item.equipo)}')" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;">
+                  📷 Ver Foto de Instalación
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  } else {
+    html += `
+      <div style="background: rgba(30, 41, 59, 0.25); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 1rem; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+        No hay registros en el histórico previo para este equipo.
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
+function goToSlotAndHighlight(plantaId, slotId) {
+  closeTrackEquipmentModal();
+
+  // Cambiar planta activa si es necesario
+  if (currentPlantaFilter !== "all" && currentPlantaFilter !== plantaId) {
+    currentPlantaFilter = plantaId;
+  }
+  currentPuestoFilter = "all";
+  renderApp();
+
+  // Buscar la tarjeta de la bahía y resaltarla
+  setTimeout(() => {
+    const card = document.querySelector(`.slot-card[data-slot-id="${slotId}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.remove("slot-highlight-pulse");
+      void card.offsetWidth;
+      card.classList.add("slot-highlight-pulse");
+    }
+  }, 250);
+}
+
+function exportTrackedEquipmentCSV() {
+  if (!currentTrackedQuery) return;
+  const csvData = Store.exportEquipmentAuditCSV(currentTrackedQuery);
+  if (!csvData) {
+    showToast("No hay datos para exportar de este equipo.", "warning");
+    return;
+  }
+
+  const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  const sanitizedName = currentTrackedQuery.replace(/[^a-zA-Z0-9_-]/g, "_");
+  link.setAttribute("download", `rastreo_equipo_${sanitizedName}_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast("Ficha de trazabilidad descargada correctamente", "success");
+}
+
 /* HISTÓRICO DE ENSAYOS Y EQUIPOS */
 let currentHistoricoPuesto = "all";
 let currentHistoricoSlot = null;
@@ -912,21 +1237,33 @@ function openHistoricoModal(slotId = null) {
   if (searchInput) searchInput.value = "";
 
   if (slotId) {
-    currentHistoricoPuesto = slotId[0];
-    document.getElementById("historico-modal-title").textContent = `Historial de la Bahía ${slotId}`;
+    const pInfo = Store.getPuestoInfo(slotId.split("_")[0] || slotId[0]);
+    currentHistoricoPuesto = slotId.split("_")[0] || slotId[0];
+    document.getElementById("historico-modal-title").textContent = `Historial de la Bahía ${slotId} (${pInfo.nombre})`;
   } else {
     currentHistoricoPuesto = "all";
     document.getElementById("historico-modal-title").textContent = "Historial General de la Cabina";
   }
 
-  // Actualizar pills de puesto
-  document.querySelectorAll("#historico-puesto-pills .filter-pill").forEach(pill => {
-    if (pill.dataset.puesto === currentHistoricoPuesto) pill.classList.add("active");
-    else pill.classList.remove("active");
-  });
-
+  renderHistoricoPills();
   renderHistorico();
   modal.classList.add("active");
+}
+
+function renderHistoricoPills() {
+  const container = document.getElementById("historico-puesto-pills");
+  if (!container) return;
+
+  const plantas = Store.getPlantas();
+  let html = `<button class="filter-pill ${currentHistoricoPuesto === 'all' ? 'active' : ''}" data-puesto="all" onclick="filterHistoricoByPuesto('all')">Todos</button>`;
+
+  plantas.forEach(pl => {
+    pl.puestos.forEach(p => {
+      html += `<button class="filter-pill ${currentHistoricoPuesto === p.id ? 'active' : ''}" data-puesto="${p.id}" onclick="filterHistoricoByPuesto('${p.id}')" title="${pl.nombre} · ${p.nombre}">${p.id}</button>`;
+    });
+  });
+
+  container.innerHTML = html;
 }
 
 function closeHistoricoModal() {
@@ -936,7 +1273,8 @@ function closeHistoricoModal() {
 function filterHistoricoByPuesto(puesto) {
   currentHistoricoPuesto = puesto;
   currentHistoricoSlot = null; // Reiniciar filtro por slot específico al cambiar de puesto
-  document.getElementById("historico-modal-title").textContent = puesto === "all" ? "Historial General de la Cabina" : `Historial del Puesto ${puesto}`;
+  const pInfo = Store.getPuestoInfo(puesto);
+  document.getElementById("historico-modal-title").textContent = puesto === "all" ? "Historial General de la Cabina" : `Historial de ${pInfo.nombre}`;
   document.querySelectorAll("#historico-puesto-pills .filter-pill").forEach(pill => {
     if (pill.dataset.puesto === puesto) pill.classList.add("active");
     else pill.classList.remove("active");
