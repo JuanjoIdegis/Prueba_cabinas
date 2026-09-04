@@ -1,12 +1,106 @@
 {
-  "version": "1.0.0",
+  "version": "1.2.0",
+  "plantas": [
+    {
+      "id": "cabina",
+      "nombre": "Planta Cabina",
+      "icono": "⚡",
+      "puestos": [
+        {
+          "id": "A",
+          "nombre": "Puesto A",
+          "slotsCount": 4
+        },
+        {
+          "id": "B",
+          "nombre": "Puesto B",
+          "slotsCount": 4
+        },
+        {
+          "id": "C",
+          "nombre": "Puesto C",
+          "slotsCount": 4
+        },
+        {
+          "id": "D",
+          "nombre": "Puesto D",
+          "slotsCount": 4
+        },
+        {
+          "id": "E",
+          "nombre": "Puesto E",
+          "slotsCount": 4
+        },
+        {
+          "id": "F",
+          "nombre": "Puesto F",
+          "slotsCount": 4
+        },
+        {
+          "id": "G",
+          "nombre": "Puesto G",
+          "slotsCount": 4
+        },
+        {
+          "id": "H",
+          "nombre": "Puesto H",
+          "slotsCount": 4
+        },
+        {
+          "id": "I",
+          "nombre": "Puesto I",
+          "slotsCount": 4
+        },
+        {
+          "id": "J",
+          "nombre": "Puesto J",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "piloto",
+      "nombre": "Planta Piloto Laboratorio",
+      "icono": "🔬",
+      "puestos": [
+        {
+          "id": "CG1",
+          "nombre": "Planta Piloto Cellguard 1",
+          "slotsCount": 4
+        },
+        {
+          "id": "CG2",
+          "nombre": "Planta Piloto Cellguard 2",
+          "slotsCount": 4
+        },
+        {
+          "id": "EC1",
+          "nombre": "Planta Piloto EC (Golpes ariete) 1",
+          "slotsCount": 4
+        },
+        {
+          "id": "EC2",
+          "nombre": "Planta Piloto EC (Golpes ariete) 2",
+          "slotsCount": 4
+        }
+      ]
+    }
+  ],
   "puestos": [
     "A",
     "B",
     "C",
     "D",
     "E",
-    "F"
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "CG1",
+    "CG2",
+    "EC1",
+    "EC2"
   ],
   "slots": {
     "A1": {
@@ -24,7 +118,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T07:52:12.648Z"
+      "updated_at": ""
     },
     "A2": {
       "puesto": "A",
@@ -416,128 +510,551 @@
       "descripcion": "",
       "imagen": "",
       "updated_at": ""
+    },
+    "G1": {
+      "puesto": "G",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "G2": {
+      "puesto": "G",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "G3": {
+      "puesto": "G",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "G4": {
+      "puesto": "G",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "H1": {
+      "puesto": "H",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "H2": {
+      "puesto": "H",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "H3": {
+      "puesto": "H",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "H4": {
+      "puesto": "H",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "I1": {
+      "puesto": "I",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "I2": {
+      "puesto": "I",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "I3": {
+      "puesto": "I",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "I4": {
+      "puesto": "I",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "J1": {
+      "puesto": "J",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "J2": {
+      "puesto": "J",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "J3": {
+      "puesto": "J",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "J4": {
+      "puesto": "J",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG1_1": {
+      "puesto": "CG1",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG1_2": {
+      "puesto": "CG1",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG1_3": {
+      "puesto": "CG1",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG1_4": {
+      "puesto": "CG1",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG2_1": {
+      "puesto": "CG2",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG2_2": {
+      "puesto": "CG2",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG2_3": {
+      "puesto": "CG2",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG2_4": {
+      "puesto": "CG2",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC1_1": {
+      "puesto": "EC1",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC1_2": {
+      "puesto": "EC1",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC1_3": {
+      "puesto": "EC1",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC1_4": {
+      "puesto": "EC1",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC2_1": {
+      "puesto": "EC2",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC2_2": {
+      "puesto": "EC2",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC2_3": {
+      "puesto": "EC2",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "EC2_4": {
+      "puesto": "EC2",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
     }
   },
-  "telemetria_puestos": {
-    "A": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "B": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "C": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "D": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "E": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "F": {
-      "vcc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "acc": [
-        0,
-        0,
-        0,
-        0
-      ],
-      "aux": [
-        0,
-        0,
-        0,
-        0
-      ]
-    }
-  }
+  "historico": []
 }
