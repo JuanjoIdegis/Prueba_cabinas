@@ -123,14 +123,6 @@ function renderMetrics() {
   if (totalEl) totalEl.textContent = `${totalSlots - libres}/${totalSlots}`;
 }
 
-function getShortZonaName(nombre, idx) {
-  if (!nombre) return `Z${idx + 1}`;
-  let clean = nombre.replace(/^Zona\s*\d+\s*:\s*/i, "").trim();
-  clean = clean.replace(/^Planta\s*Piloto\s*/i, "Piloto ").trim();
-  clean = clean.replace(/\s*\(Golpes\s*Ariete\s*(\d+)\)/i, " Ariete $1").trim();
-  return `Z${idx + 1}: ${clean}`;
-}
-
 function renderPlantasNav() {
   const container = document.getElementById("plantas-nav");
   if (!container) return;
@@ -142,14 +134,16 @@ function renderPlantasNav() {
     totalBahiasGlobal += pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
   });
 
+  const activePlanta = plantas.find(p => p.id === currentPlantaFilter);
+
   let html = `
     <div class="zone-bar-wrapper">
-      <!-- Desplegable compacto de zona -->
+      <!-- Selector desplegable principal de zona -->
       <div class="zone-dropdown-box">
-        <span class="zone-select-label">📍 ZONA:</span>
-        <select id="zona-select-dropdown" class="zone-select-dropdown" title="Seleccionar zona">
+        <label for="zona-select-dropdown" class="zone-select-label">📍 ZONA SELECCIONADA:</label>
+        <select id="zona-select-dropdown" class="zone-select-dropdown" title="Cambiar zona de trabajo">
           <option value="all" ${currentPlantaFilter === 'all' ? 'selected' : ''}>
-            🏢 Todas las Zonas (${totalBahiasGlobal} bahías)
+            🏢 Todas las Zonas (${totalBahiasGlobal} bahías en total)
           </option>
   `;
 
@@ -164,37 +158,17 @@ function renderPlantasNav() {
 
   html += `
         </select>
+        ${activePlanta ? `
+          <button class="btn-icon" onclick="openRenameZonaModal('${activePlanta.id}', '${escapeHtml(activePlanta.nombre)}')" title="Renombrar esta zona (${escapeHtml(activePlanta.nombre)})" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm); cursor: pointer; color: #fff; font-size: 0.74rem; padding: 0.4rem 0.65rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem;">
+            ✏️ Renombrar Zona
+          </button>
+        ` : ''}
       </div>
 
-      <!-- Píldoras compactas horizontales en una sola línea limpia -->
-      <div class="plantas-tabs">
-        <button class="plant-btn ${currentPlantaFilter === 'all' ? 'active' : ''}" data-planta="all" title="Ver todas las zonas (${totalBahiasGlobal} bahías)">
-          <span>🏢 Todas</span>
-          <span class="tab-badge">${totalBahiasGlobal}</span>
-        </button>
-  `;
-
-  plantas.forEach((pl, idx) => {
-    const totalBahias = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
-    const isActive = currentPlantaFilter === pl.id;
-    const shortLabel = getShortZonaName(pl.nombre, idx);
-
-    html += `
-      <button class="plant-btn ${isActive ? 'active' : ''}" data-planta="${pl.id}" title="${escapeHtml(pl.nombre)} (${pl.puestos.length} puestos · ${totalBahias} bahías)">
-        <span>${pl.icono || '🏢'}</span>
-        <span>${escapeHtml(shortLabel)}</span>
-        <span class="tab-badge">${totalBahias}</span>
-      </button>
-    `;
-  });
-
-  html += `
-      </div>
-
-      <!-- Botón Editar Nombres -->
+      <!-- Botón de configuración de nombres a la derecha -->
       <div class="zone-edit-action">
-        <button class="btn btn-secondary" style="font-size: 0.74rem; padding: 0.35rem 0.65rem; white-space: nowrap;" onclick="openEditPuestosModal()" title="Personalizar y editar nombres de zonas y puestos">
-          ✏️ Editar Nombres
+        <button class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.4rem 0.8rem; white-space: nowrap;" onclick="openEditPuestosModal()" title="Personalizar y editar nombres de todas las zonas y puestos">
+          ⚙️ Configurar Nombres
         </button>
       </div>
     </div>
@@ -210,14 +184,6 @@ function renderPlantasNav() {
       renderApp();
     });
   }
-
-  container.querySelectorAll(".plant-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentPlantaFilter = btn.dataset.planta;
-      currentPuestoFilter = "all";
-      renderApp();
-    });
-  });
 }
 
 function renderTabs() {
@@ -269,6 +235,8 @@ function renderTabs() {
 function renderPuestos() {
   const container = document.getElementById("puestos-grid");
   if (!container) return;
+
+  container.classList.toggle("mode-compact-view", areAllCollapsed);
 
   const allPuestos = (currentPlantaFilter === "all")
     ? (Store.data.puestos || [])
