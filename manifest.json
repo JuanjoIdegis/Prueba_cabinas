@@ -1,7 +1,7 @@
 {
   "name": "Cabina de Pruebas Fluidra",
   "short_name": "Cabina Pruebas",
-  "description": "Seguimiento y control de equipos conectados en cabina de pruebas (A-F)",
+  "description": "Seguimiento y control de equipos conectados en cabina de pruebas y plantas piloto",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#0b0f19",
