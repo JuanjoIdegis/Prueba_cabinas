@@ -96,12 +96,12 @@ const QRScanner = {
     }
 
     if (!target.puesto) {
-      const matchSlot = rawText.match(/(?:SLOT|slot|Slot)?[:\s-]*([A-F])([1-4])/i);
+      const matchSlot = rawText.match(/(?:SLOT|slot|Slot)?[:\s-]*([A-Za-z0-9_]+)[_:-]?([1-5])/i);
       if (matchSlot) {
         target.puesto = matchSlot[1].toUpperCase();
         target.slot = parseInt(matchSlot[2], 10);
       } else {
-        const matchPuesto = rawText.match(/(?:PUESTO|puesto|Cabina)?[:\s-]*([A-F])/i);
+        const matchPuesto = rawText.match(/(?:PUESTO|puesto|Cabina)?[:\s-]*([A-Za-z0-9_]+)/i);
         if (matchPuesto) {
           target.puesto = matchPuesto[1].toUpperCase();
         }
