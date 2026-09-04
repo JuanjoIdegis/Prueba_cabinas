@@ -1,9 +1,9 @@
 {
-  "version": "1.2.0",
+  "version": "2.0.0",
   "plantas": [
     {
-      "id": "cabina",
-      "nombre": "Planta Cabina",
+      "id": "zona1",
+      "nombre": "Zona 1: Cabinas Test",
       "icono": "⚡",
       "puestos": [
         {
@@ -59,28 +59,73 @@
       ]
     },
     {
-      "id": "piloto",
-      "nombre": "Planta Piloto Laboratorio",
+      "id": "zona2",
+      "nombre": "Zona 2: Planta Piloto Cabina test",
+      "icono": "🧪",
+      "puestos": [
+        {
+          "id": "PCAB",
+          "nombre": "Piloto Cabina Test",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona3",
+      "nombre": "Zona 3: Planta piloto Laboratorio",
       "icono": "🔬",
+      "puestos": [
+        {
+          "id": "PLAB",
+          "nombre": "Piloto Laboratorio",
+          "slotsCount": 4
+        }
+      ]
+    },
+    {
+      "id": "zona4",
+      "nombre": "Zona 4: Planta Piloto Cellguard 1",
+      "icono": "🔋",
       "puestos": [
         {
           "id": "CG1",
           "nombre": "Planta Piloto Cellguard 1",
-          "slotsCount": 4
-        },
+          "slotsCount": 5
+        }
+      ]
+    },
+    {
+      "id": "zona5",
+      "nombre": "Zona 5: Planta Piloto Cellguard 2",
+      "icono": "🔋",
+      "puestos": [
         {
           "id": "CG2",
           "nombre": "Planta Piloto Cellguard 2",
-          "slotsCount": 4
-        },
+          "slotsCount": 5
+        }
+      ]
+    },
+    {
+      "id": "zona6",
+      "nombre": "Zona 6: Planta Piloto EC (Golpes Ariete 1)",
+      "icono": "🌊",
+      "puestos": [
         {
           "id": "EC1",
-          "nombre": "Planta Piloto EC (Golpes ariete) 1",
+          "nombre": "Planta Piloto EC (Golpes Ariete 1)",
           "slotsCount": 4
-        },
+        }
+      ]
+    },
+    {
+      "id": "zona7",
+      "nombre": "Zona 7: Planta Piloto EC (Golpes Ariete 2)",
+      "icono": "🌊",
+      "puestos": [
         {
           "id": "EC2",
-          "nombre": "Planta Piloto EC (Golpes ariete) 2",
+          "nombre": "Planta Piloto EC (Golpes Ariete 2)",
           "slotsCount": 4
         }
       ]
@@ -97,6 +142,8 @@
     "H",
     "I",
     "J",
+    "PCAB",
+    "PLAB",
     "CG1",
     "CG2",
     "EC1",
@@ -1041,6 +1088,176 @@
     "EC2_4": {
       "puesto": "EC2",
       "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PCAB_1": {
+      "puesto": "PCAB",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PCAB_2": {
+      "puesto": "PCAB",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PCAB_3": {
+      "puesto": "PCAB",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PCAB_4": {
+      "puesto": "PCAB",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PLAB_1": {
+      "puesto": "PLAB",
+      "slot": 1,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PLAB_2": {
+      "puesto": "PLAB",
+      "slot": 2,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PLAB_3": {
+      "puesto": "PLAB",
+      "slot": 3,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "PLAB_4": {
+      "puesto": "PLAB",
+      "slot": 4,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG1_5": {
+      "puesto": "CG1",
+      "slot": 5,
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "prueba": "",
+      "responsable": "",
+      "f_inicio": "",
+      "f_final": "",
+      "descripcion": "",
+      "imagen": "",
+      "updated_at": ""
+    },
+    "CG2_5": {
+      "puesto": "CG2",
+      "slot": 5,
       "estado": "libre",
       "equipo": "",
       "modelo": "",
