@@ -390,6 +390,7 @@ const Store = {
         sw: prev.sw || "",
         validacion: prev.validacion || "",
         iot: prev.iot || "",
+        datalogger: !!prev.datalogger,
         prueba: prev.prueba || "",
         responsable: prev.responsable || "",
         f_inicio: prev.f_inicio || "",
@@ -404,6 +405,7 @@ const Store = {
     this.data.slots[slotId] = {
       ...this.data.slots[slotId],
       ...slotData,
+      datalogger: !!slotData.datalogger,
       puesto: parsed.puesto,
       slot: parsed.slot,
       updated_at: new Date().toISOString()
@@ -456,6 +458,7 @@ const Store = {
         sw: prev.sw || "",
         validacion: prev.validacion || "",
         iot: prev.iot || "",
+        datalogger: !!prev.datalogger,
         prueba: prev.prueba || (prev.estado === "no_tocar" ? "Ensayo Crítico / No Manipular" : "Ensayo"),
         responsable: prev.responsable || "No especificado",
         f_inicio: prev.f_inicio || "",
@@ -476,6 +479,7 @@ const Store = {
       sw: "",
       validacion: "",
       iot: "",
+      datalogger: false,
       prueba: "",
       responsable: "",
       f_inicio: "",
@@ -499,6 +503,24 @@ const Store = {
     } catch (e) {}
 
     return syncResult;
+  },
+
+  async toggleDatalogger(slotId, isConnected) {
+    if (!this.data.slots) this.data.slots = {};
+    if (!this.data.slots[slotId]) {
+      const parsed = this._parseSlotId(slotId, {});
+      this.data.slots[slotId] = {
+        puesto: parsed.puesto,
+        slot: parsed.slot,
+        estado: "libre"
+      };
+    }
+    this.data.slots[slotId].datalogger = !!isConnected;
+    this.data.slots[slotId].updated_at = new Date().toISOString();
+
+    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this.notify();
+    return await this.saveToGitHub(`Datalogger ${isConnected ? 'conectado' : 'desconectado'} en bahía ${slotId}`);
   },
 
   trackEquipment(query) {
