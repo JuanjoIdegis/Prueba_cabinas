@@ -28,11 +28,13 @@ const QRGenerator = {
 
     // Determinar qué puestos imprimir
     let puestosToPrint = [];
-    if (type === "cabina") {
-      puestosToPrint = Store.getPuestosByPlanta("cabina");
+    if (type && type.startsWith("zona")) {
+      puestosToPrint = Store.getPuestosByPlanta(type);
+    } else if (type === "cabina") {
+      puestosToPrint = Store.getPuestosByPlanta("zona1");
     } else if (type === "piloto") {
-      puestosToPrint = Store.getPuestosByPlanta("piloto");
-    } else if (type === "puestos" || type === "todos") {
+      puestosToPrint = (Store.data.puestos || []).filter(pid => pid !== "A" && pid !== "B" && pid !== "C" && pid !== "D" && pid !== "E" && pid !== "F" && pid !== "G" && pid !== "H" && pid !== "I" && pid !== "J").map(pid => Store.getPuestoInfo(pid));
+    } else {
       puestosToPrint = (Store.data.puestos || []).map(pid => Store.getPuestoInfo(pid));
     }
 
