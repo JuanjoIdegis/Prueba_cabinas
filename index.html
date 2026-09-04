@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=2.4.1" />
+  <link rel="stylesheet" href="css/style.css?v=2.4.2" />
 </head>
 <body>
 
@@ -333,8 +333,8 @@
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span style="font-size: 1.3rem;">🖨️</span>
           <div>
-            <h3 style="margin: 0;">Carteles QR para Paneles de Cabina</h3>
-            <small style="color: var(--text-dim); font-size: 0.72rem;">Imprime y pega los carteles para acceder directamente con la cámara del móvil</small>
+            <h3 style="margin: 0;" id="qr-print-modal-title">Carteles QR para Paneles de Cabina</h3>
+            <small style="color: var(--text-dim); font-size: 0.72rem;" id="qr-print-modal-subtitle">Imprime y pega los carteles para acceder directamente con la cámara del móvil</small>
           </div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -349,8 +349,8 @@
       </div>
       <div class="modal-body">
         <div class="print-modal-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem; background: rgba(15, 23, 42, 0.5); padding: 0.7rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Selecciona qué carteles generar:</span>
-          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;" id="print-modal-filter-label">Selecciona qué carteles generar:</span>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="print-filter-buttons">
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'todos')">🏢 Todos los Puestos (Zonas 1 a 7)</button>
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'zona1')">⚡ Zona 1: Cabinas Test (A - J)</button>
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'pilotos')">🧪 Zonas 2 a 7: Plantas Piloto</button>
@@ -551,10 +551,10 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=2.4.1"></script>
-  <script src="js/store.js?v=2.4.1"></script>
-  <script src="js/qr-scanner.js?v=2.4.1"></script>
-  <script src="js/qr-generator.js?v=2.4.1"></script>
-  <script src="js/app.js?v=2.4.1"></script>
+  <script src="js/qrcode.min.js?v=2.4.2"></script>
+  <script src="js/store.js?v=2.4.2"></script>
+  <script src="js/qr-scanner.js?v=2.4.2"></script>
+  <script src="js/qr-generator.js?v=2.4.2"></script>
+  <script src="js/app.js?v=2.4.2"></script>
 </body>
 </html>
