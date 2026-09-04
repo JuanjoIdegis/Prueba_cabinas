@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Seguimiento Equipos Cabina de Pruebas · Fluidra</title>
+  <meta name="description" content="Sistema de control, estado y trazabilidad de equipos conectados en cabina de ensayos (Puestos A a F)." />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Encabezado Principal -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-info">
+          <h1>CABINA DE PRUEBAS <span class="badge-pill">FLUIDRA LAB</span></h1>
+          <p>Control y trazabilidad de bahías A - F (24 slots)</p>
+        </div>
+      </div>
+
+      <!-- Métricas de Ocupación en Tiempo Real -->
+      <div class="metrics-strip">
+        <div class="metric-tag" title="Bahías libres sin equipo">
+          <span class="dot libre"></span>
+          <span>Libres:</span>
+          <span class="num" id="metric-libres">--</span>
+        </div>
+        <div class="metric-tag" title="En uso pero disponibles para pruebas secundarias">
+          <span class="dot disponible"></span>
+          <span>Disponibles:</span>
+          <span class="num" id="metric-disponibles">--</span>
+        </div>
+        <div class="metric-tag" title="En prueba crítica o ensayo cerrado - Prohibido tocar">
+          <span class="dot no-tocar"></span>
+          <span>No Tocar:</span>
+          <span class="num" id="metric-no-tocar">--</span>
+        </div>
+        <div class="metric-tag" title="Ocupación total">
+          <span>Ocupación:</span>
+          <span class="num" id="metric-total">--/24</span>
+        </div>
+      </div>
+
+      <!-- Acciones de Cabecera -->
+      <div class="header-actions">
+        <button class="btn btn-accent" onclick="openQRScannerModal()" title="Escanear código QR en puesto físico con la cámara">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Escanear QR</span>
+        </button>
+        <button class="btn btn-primary" onclick="openMobileConnectModal()" title="Ver código QR para abrir la app en tu smartphone">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Conectar Móvil</span>
+        </button>
+        <button class="btn btn-secondary" onclick="openQRPrintModal('puestos')" title="Generar e imprimir carteles QR para pegar en la cabina">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Carteles QR</span>
+        </button>
+        <button class="btn btn-secondary" onclick="openSyncModal()" title="Ajustes de base de datos y copia de seguridad">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de Filtros y Selector de Puestos -->
+  <section class="control-bar">
+    <!-- Pestañas de Puestos A - F -->
+    <div class="tabs-puestos" id="tabs-puestos">
+      <!-- Inyectado dinámicamente -->
+    </div>
+
+    <!-- Barra de búsqueda y Filtros por Estado -->
+    <div class="filter-row">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar por equipo, modelo, responsable, SW o ID IoT..." />
+      </div>
+
+      <div class="status-filter-pills">
+        <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.3rem;">Estado:</span>
+        <button class="filter-pill active" data-status="all">Todos</button>
+        <button class="filter-pill" data-status="libre">🟢 Libres</button>
+        <button class="filter-pill" data-status="en_uso_disponible">🟡 En uso (Disponibles)</button>
+        <button class="filter-pill" data-status="no_tocar">🔴 No Tocar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contenido Principal: Grilla de Puestos y Bahías -->
+  <main class="main-content">
+    <div class="puestos-grid" id="puestos-grid">
+      <!-- Tarjetas de Puestos inyectadas por app.js -->
+    </div>
+  </main>
+
+  <!-- ==================== MODALES ==================== -->
+
+  <!-- Modal: Editar / Conectar Equipo en Bahía -->
+  <div class="modal-overlay" id="edit-slot-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modal-edit-slot-title">Editar Bahía</h3>
+        <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Selector Visual de Estado -->
+        <div class="form-group full-width">
+          <label>ESTADO DE USO DE LA BAHÍA</label>
+          <div class="state-selector-group">
+            <div class="state-radio-card libre selected" data-value="libre">
+              <input type="radio" name="modal-state" value="libre" checked />
+              <span class="dot"></span>
+              <span>LIBRE</span>
+              <small style="font-size: 0.65rem; color: var(--text-dim);">Sin uso / Disponible</small>
+            </div>
+            <div class="state-radio-card en_uso_disponible" data-value="en_uso_disponible">
+              <input type="radio" name="modal-state" value="en_uso_disponible" />
+              <span class="dot"></span>
+              <span>EN USO (DISPONIBLE)</span>
+              <small style="font-size: 0.65rem; color: var(--text-dim);">Puede compartirse</small>
+            </div>
+            <div class="state-radio-card no_tocar" data-value="no_tocar">
+              <input type="radio" name="modal-state" value="no_tocar" />
+              <span class="dot"></span>
+              <span>NO TOCAR</span>
+              <small style="font-size: 0.65rem; color: var(--text-dim);">En prueba crítica</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Módulo de Foto del Equipo -->
+        <div class="form-group full-width">
+          <label>IMAGEN / FOTO DEL EQUIPO (Identificación visual)</label>
+          <div class="image-upload-wrapper">
+            <div class="image-preview-box" id="edit-image-preview">
+              <span class="placeholder">📷</span>
+            </div>
+            <div class="image-upload-actions">
+              <button class="btn btn-secondary" type="button" onclick="document.getElementById('camera-input').click()">
+                📸 Tomar Foto con Cámara
+              </button>
+              <button class="btn btn-secondary" type="button" onclick="document.getElementById('file-input').click()">
+                📁 Seleccionar Imagen del Dispositivo
+              </button>
+              <input type="file" id="camera-input" class="file-input-hidden" accept="image/*" capture="environment" />
+              <input type="file" id="file-input" class="file-input-hidden" accept="image/*" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Campos de Datos del Equipo -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="form-equipo">Equipo (Identificador)</label>
+            <input type="text" id="form-equipo" class="form-input" placeholder="Ej: EQ-F01, CIPSA-01..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-modelo">Modelo</label>
+            <input type="text" id="form-modelo" class="form-input" placeholder="Ej: Connect Box Gen2, Clorador 25g..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-sw">SW (Versión Firmware)</label>
+            <input type="text" id="form-sw" class="form-input" placeholder="Ej: v2.4.1-rc1, v1.12.0..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-validacion">Validación</label>
+            <input type="text" id="form-validacion" class="form-input" placeholder="Ej: VAL-2026-088, Homologado..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-iot">IoT (MAC / IMEI / ID)</label>
+            <input type="text" id="form-iot" class="form-input" placeholder="Ej: MAC: 00:1A:7D:DA..., IMEI..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-responsable">Responsable</label>
+            <input type="text" id="form-responsable" class="form-input" placeholder="Ej: J. Juárez, M. Gómez..." />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="form-prueba">Tipo de Prueba</label>
+            <input type="text" id="form-prueba" class="form-input" placeholder="Ej: Validación Wi-Fi, Ciclo continuo 1000h, Ensayo térmico..." />
+          </div>
+
+          <div class="form-group">
+            <label for="form-f-inicio" style="display: flex; justify-content: space-between;">
+              <span>F. Inicio</span>
+              <button type="button" id="btn-set-today" style="background: none; border: none; color: var(--accent-cyan); font-size: 0.72rem; cursor: pointer;">Hoy</button>
+            </label>
+            <input type="date" id="form-f-inicio" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label for="form-f-final">F. Final (Estimada o real)</label>
+            <input type="date" id="form-f-final" class="form-input" />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="form-descripcion">Descripción / Observaciones</label>
+            <textarea id="form-descripcion" class="form-textarea" placeholder="Detalles de la conexión, precauciones especiales, cables conectados..."></textarea>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveSlotForm()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Visor de Imagen en Grande -->
+  <div class="modal-overlay image-viewer-modal" id="image-viewer-modal" onclick="closeImageViewer()">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="viewer-img-title">Foto del Equipo</h3>
+        <button class="close-btn" onclick="closeImageViewer()">&times;</button>
+      </div>
+      <div class="image-viewer-content">
+        <img id="viewer-img-src" src="" alt="Vista ampliada" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Conectar Móvil mediante Código QR de Red -->
+  <div class="modal-overlay" id="mobile-connect-modal">
+    <div class="modal-window" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>📱 Conectar Móvil en Cabina</h3>
+        <button class="close-btn" onclick="closeMobileConnectModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="mobile-connect-box">
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+            Apunta con la cámara de tu móvil para abrir esta misma aplicación y actualizar los equipos directamente desde la cabina física.
+          </p>
+          <div class="qr-display-canvas" id="mobile-qr-canvas"></div>
+          <div class="network-url-pill">
+            <span id="mobile-url-text">http://192.168.x.x:5050</span>
+          </div>
+          <span class="tab-badge" id="mobile-ip-badge">Red Wi-Fi Fluidra</span>
+          <p style="font-size: 0.75rem; color: var(--text-dim);">
+            (Ambos dispositivos deben estar en la misma red Wi-Fi / LAN)
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeMobileConnectModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Lector QR con Cámara -->
+  <div class="modal-overlay" id="qr-scanner-modal">
+    <div class="modal-window" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>📷 Escáner QR de Cabina</h3>
+        <button class="close-btn" onclick="closeQRScannerModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-scanner-container">
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Enfoca el código QR pegado en el puesto (A - F) o en la bahía para acceder al instante.
+          </p>
+          <div id="qr-video-feed">
+            <video id="qr-video-element" playsinline></video>
+            <div class="scan-target-box"></div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--accent-cyan);">Buscando código...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeQRScannerModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Imprimir Carteles QR para Puestos -->
+  <div class="modal-overlay" id="qr-print-modal">
+    <div class="modal-window" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3>🖨️ Carteles QR para Paneles de Cabina</h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="window.print()">Imprimir Ahora</button>
+          <button class="close-btn" onclick="closeQRPrintModal()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Imprime estas tarjetas y pégalas en los paneles de la cabina (Puestos A a F) para escanearlas rápidamente.
+          </p>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn btn-secondary" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'puestos')">6 Puestos (A-F)</button>
+            <button class="btn btn-secondary" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'slots')">24 Bahías (A1-F4)</button>
+          </div>
+        </div>
+        <div id="print-sheet-container">
+          <!-- Inyectado por QRGenerator -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ajustes y Sincronización Cloud -->
+  <div class="modal-overlay" id="sync-modal">
+    <div class="modal-window" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>⚙️ Ajustes de Sincronización en la Nube</h3>
+        <button class="close-btn" onclick="closeSyncModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Estado GitHub -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem; margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; font-size: 0.85rem;">Repositorio GitHub:</span>
+            <span id="github-status-badge" class="badge-pill" style="background: #1e293b; color: #38bdf8;">idegis/test_cabinas</span>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.8rem;">
+            Rama: <code>main</code> · Archivo: <code>database.json</code> · Sin necesidad de servidores locales ni PCs encendidos.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 0.6rem;">
+            <label style="font-size: 0.75rem;">GitHub Personal Access Token (PAT):</label>
+            <input type="password" id="github-token-input" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+            <small style="font-size: 0.7rem; color: var(--text-dim); display: block; margin-top: 0.25rem;">
+              Permite a este dispositivo subir cambios directamente a GitHub al pulsar "Guardar" en cualquier bahía.
+            </small>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" style="flex: 1; font-size: 0.78rem;" onclick="saveGitHubSettings()">
+              💾 Guardar Token y Conectar
+            </button>
+            <button class="btn btn-secondary" style="font-size: 0.78rem;" onclick="testGitHubConnection()">
+              🔄 Probar Conexión
+            </button>
+          </div>
+        </div>
+
+        <!-- URL Base para Códigos QR -->
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label style="font-size: 0.78rem;">URL Base de Carteles QR para los Módulos:</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="qr-base-url-input" class="form-input" placeholder="https://idegis.github.io/test_cabinas" />
+            <button class="btn btn-secondary" style="font-size: 0.78rem; white-space: nowrap;" onclick="saveBaseUrlSetting()">
+              Guardar URL
+            </button>
+          </div>
+          <small style="font-size: 0.7rem; color: var(--text-dim); display: block; margin-top: 0.25rem;">
+            Los carteles QR físicos se generarán apuntando a esta dirección (ej: <code>.../?puesto=F</code>).
+          </small>
+        </div>
+
+        <!-- Copia de seguridad -->
+        <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="font-size: 0.78rem;">COPIA DE SEGURIDAD LOCAL</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" style="flex: 1; font-size: 0.75rem;" onclick="exportDatabaseJSON()">
+              📥 Descargar database.json
+            </button>
+            <label class="btn btn-secondary" style="flex: 1; font-size: 0.75rem; justify-content: center; cursor: pointer;">
+              📤 Importar JSON
+              <input type="file" id="import-json-file" accept=".json" style="display: none;" onchange="importDatabaseJSON(event)" />
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSyncModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Alertas Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/qr-scanner.js"></script>
+  <script src="js/qr-generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
