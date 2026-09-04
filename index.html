@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/style.css?v=2.4.1" />
 </head>
 <body>
 
@@ -20,13 +20,13 @@
         <div class="brand-icon">⚡</div>
         <div class="brand-info">
           <h1>CABINA DE PRUEBAS <span class="badge-pill">FLUIDRA LAB</span></h1>
-          <p>Control y trazabilidad de bahías · Planta Cabina & Planta Piloto</p>
+          <p>Control y trazabilidad de ensayos · Planta Cabina & Planta Piloto</p>
         </div>
       </div>
 
       <!-- Resumen de Métricas -->
       <div class="metrics-bar">
-        <div class="metric-tag" title="Bahías libres para conectar">
+        <div class="metric-tag" title="Puestos libres para conectar">
           <span class="dot libre"></span>
           <span>Libres:</span>
           <span class="num" id="metric-libres">--</span>
@@ -41,7 +41,7 @@
           <span>No Tocar:</span>
           <span class="num" id="metric-no-tocar">--</span>
         </div>
-        <div class="metric-tag" title="Bahías con datalogger de registro conectado">
+        <div class="metric-tag" title="Dataloggers de registro conectados">
           <span style="font-size: 0.8rem;">📊</span>
           <span>Dataloggers:</span>
           <span class="num" id="metric-dataloggers" style="color: var(--accent-cyan);">0</span>
@@ -112,14 +112,14 @@
       </div>
 
       <div style="display: flex; gap: 0.4rem; align-items: center; margin-left: auto;">
-        <button class="btn btn-secondary" id="btn-toggle-all-cards" onclick="toggleAllCardsCollapse()" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; white-space: nowrap;" title="Plegar o desplegar todas las bahías para una visual limpia">
-          <span id="btn-toggle-all-cards-text">🔽 Desplegar Bahías</span>
+        <button class="btn btn-secondary" id="btn-toggle-all-cards" onclick="toggleAllCardsCollapse()" style="font-size: 0.75rem; padding: 0.4rem 0.8rem; white-space: nowrap;" title="Plegar o desplegar todo para una visual limpia">
+          <span id="btn-toggle-all-cards-text">🔽 Desplegar Todo</span>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Contenido Principal: Grilla de Puestos y Bahías -->
+  <!-- Contenido Principal: Grilla de Puestos -->
   <main class="main-content">
     <div class="puestos-grid" id="puestos-grid">
       <!-- Tarjetas de Puestos inyectadas por app.js -->
@@ -128,18 +128,18 @@
 
   <!-- ==================== MODALES ==================== -->
 
-  <!-- Modal: Editar / Conectar Equipo en Bahía -->
+  <!-- Modal: Editar / Conectar Equipo -->
   <div class="modal-overlay" id="edit-slot-modal">
     <div class="modal-window">
       <div class="modal-header">
-        <h3 id="modal-edit-slot-title">Editar Bahía</h3>
+        <h3 id="modal-edit-slot-title">Editar</h3>
         <button class="close-btn" onclick="closeEditModal()">&times;</button>
       </div>
       <div class="modal-body">
         
         <!-- Selector Visual de Estado -->
         <div class="form-group full-width">
-          <label>ESTADO DE USO DE LA BAHÍA</label>
+          <label>ESTADO DE USO</label>
           <div class="state-selector-group">
             <div class="state-radio-card libre selected" data-value="libre">
               <input type="radio" name="modal-state" value="libre" checked />
@@ -218,11 +218,11 @@
             <label style="display: flex; align-items: center; gap: 0.65rem; margin: 0; cursor: pointer;">
               <input type="checkbox" id="form-datalogger" style="width: 19px; height: 19px; accent-color: var(--accent-cyan); cursor: pointer;" />
               <span style="font-weight: 700; color: #38bdf8; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;">
-                📊 Datalogger Conectado a esta Bahía
+                📊 Datalogger Conectado
               </span>
             </label>
             <small style="color: var(--text-dim); font-size: 0.72rem; margin-left: 2rem; display: block; margin-top: 0.2rem;">
-              Indica si la bahía tiene instrumentación de adquisición activa. Se desmarcará automáticamente al liberar la bahía.
+              Indica si tiene instrumentación de adquisición activa. Se desmarcará automáticamente al liberar.
             </small>
           </div>
 
@@ -311,7 +311,7 @@
       <div class="modal-body">
         <div class="qr-scanner-container">
           <p style="font-size: 0.85rem; color: var(--text-muted);">
-            Enfoca el código QR pegado en cualquier puesto o bahía para acceder al instante.
+            Enfoca el código QR pegado en cualquier puesto o equipo para acceder al instante.
           </p>
           <div id="qr-video-feed">
             <video id="qr-video-element" playsinline></video>
@@ -334,7 +334,7 @@
           <span style="font-size: 1.3rem;">🖨️</span>
           <div>
             <h3 style="margin: 0;">Carteles QR para Paneles de Cabina</h3>
-            <small style="color: var(--text-dim); font-size: 0.72rem;">Imprime y pega los carteles para acceder a cada puesto o bahía con la cámara del móvil</small>
+            <small style="color: var(--text-dim); font-size: 0.72rem;">Imprime y pega los carteles para acceder directamente con la cámara del móvil</small>
           </div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -354,7 +354,7 @@
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'todos')">🏢 Todos los Puestos (Zonas 1 a 7)</button>
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'zona1')">⚡ Zona 1: Cabinas Test (A - J)</button>
             <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'pilotos')">🧪 Zonas 2 a 7: Plantas Piloto</button>
-            <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'slots')">🏷️ Las 66 Bahías Individuales</button>
+            <button class="btn btn-secondary" style="font-size: 0.75rem;" onclick="QRGenerator.renderPrintSheet('print-sheet-container', 'slots')">🏷️ Identificadores Individuales (A1 - EC2_4)</button>
           </div>
         </div>
         <div id="print-sheet-container">
@@ -386,7 +386,7 @@
             <label style="font-size: 0.75rem;">GitHub Personal Access Token (PAT):</label>
             <input type="password" id="github-token-input" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
             <small style="font-size: 0.7rem; color: var(--text-dim); display: block; margin-top: 0.25rem;">
-              Permite a este dispositivo subir cambios directamente a GitHub al pulsar "Guardar" en cualquier bahía.
+              Permite a este dispositivo subir cambios directamente a GitHub al pulsar "Guardar".
             </small>
           </div>
 
@@ -551,10 +551,10 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=2.4.0"></script>
-  <script src="js/store.js?v=2.4.0"></script>
-  <script src="js/qr-scanner.js?v=2.4.0"></script>
-  <script src="js/qr-generator.js?v=2.4.0"></script>
-  <script src="js/app.js?v=2.4.0"></script>
+  <script src="js/qrcode.min.js?v=2.4.1"></script>
+  <script src="js/store.js?v=2.4.1"></script>
+  <script src="js/qr-scanner.js?v=2.4.1"></script>
+  <script src="js/qr-generator.js?v=2.4.1"></script>
+  <script src="js/app.js?v=2.4.1"></script>
 </body>
 </html>
