@@ -113,6 +113,18 @@ body {
   display: flex;
   align-items: center;
   gap: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.brand:hover {
+  opacity: 0.92;
+  transform: scale(1.01);
+}
+
+.brand:active {
+  transform: scale(0.98);
 }
 
 .brand-icon {
@@ -126,6 +138,7 @@ body {
   font-weight: 800;
   font-size: 1.3rem;
   box-shadow: 0 0 16px var(--primary-glow);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand-info h1 {
