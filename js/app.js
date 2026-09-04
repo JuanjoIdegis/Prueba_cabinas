@@ -1,8 +1,9 @@
 /**
  * Aplicación de Seguimiento de Equipos en Cabina de Pruebas (Fluidra)
- * Puestos A a F - 4 Bahías por puesto
+ * Soporte Multi-Planta: Planta Cabina (Puestos A-J) y Planta Piloto Laboratorio (Cellguard 1-2, EC 1-2)
  */
 
+let currentPlantaFilter = "cabina"; // 'cabina' | 'piloto' | 'all'
 let currentPuestoFilter = "all";
 let currentStatusFilter = "all";
 let searchQuery = "";
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Inicializar store de datos
   await Store.init();
 
-  // Comprobar parámetros de URL (ej: ?puesto=F&slot=3)
+  // Comprobar parámetros de URL (ej: ?puesto=F&slot=3 o ?puesto=CG1)
   checkUrlParams();
 
   // Escuchar actualizaciones del store
@@ -32,51 +33,75 @@ function checkUrlParams() {
   let puesto = urlParams.get("puesto");
   let slot = urlParams.get("slot");
 
-  // También soportar formato Hash (útil en SPAs o redirecciones: #puesto=F o #F2)
+  // Soporte formato Hash: #puesto=F o #CG1 o #J2
   if (!puesto && window.location.hash) {
     const hashClean = window.location.hash.replace(/^#/, "");
     if (hashClean.includes("puesto=")) {
       const hashParams = new URLSearchParams(hashClean);
       puesto = hashParams.get("puesto");
       slot = hashParams.get("slot");
-    } else if (/^[A-Fa-f][1-4]?$/.test(hashClean)) {
-      puesto = hashClean[0].toUpperCase();
-      if (hashClean.length > 1) slot = hashClean[1];
+    } else {
+      puesto = hashClean;
     }
   }
 
-  if (puesto && ["A", "B", "C", "D", "E", "F"].includes(puesto.toUpperCase())) {
-    currentPuestoFilter = puesto.toUpperCase();
-    setTimeout(() => {
-      showToast(`📍 Mostrando módulo físico: Puesto ${puesto.toUpperCase()}`, "info");
-      if (slot && [1, 2, 3, 4].includes(parseInt(slot, 10))) {
-        openEditModal(`${puesto.toUpperCase()}${slot}`);
-      }
-    }, 400);
+  if (puesto) {
+    const pInfo = Store.getPuestoInfo(puesto);
+    if (pInfo) {
+      currentPlantaFilter = pInfo.plantaId;
+      currentPuestoFilter = pInfo.id;
+      setTimeout(() => {
+        showToast(`📍 Mostrando ${pInfo.nombre} (${pInfo.plantaNombre})`, "info");
+        if (slot) {
+          const slotNum = parseInt(slot, 10);
+          if (slotNum >= 1 && slotNum <= (pInfo.slotsCount || 4)) {
+            const slotId = pInfo.id.length > 2 || pInfo.id.includes('_') ? `${pInfo.id}_${slotNum}` : `${pInfo.id}${slotNum}`;
+            openEditModal(slotId);
+          }
+        }
+      }, 400);
+    }
   }
 }
 
 function renderApp() {
   renderMetrics();
+  renderPlantasNav();
   renderTabs();
   renderPuestos();
 }
 
 function renderMetrics() {
   const slots = Store.data.slots || {};
-  const values = Object.values(slots);
   
+  // Si hay una planta seleccionada, filtrar métricas por esa planta
+  let relevantPuestoIds = [];
+  if (currentPlantaFilter === "all") {
+    relevantPuestoIds = Store.data.puestos || [];
+  } else {
+    relevantPuestoIds = Store.getPuestosByPlanta(currentPlantaFilter).map(p => p.id);
+  }
+
   let libres = 0;
   let disponibles = 0;
   let noTocar = 0;
+  let totalSlots = 0;
 
-  values.forEach(s => {
-    if (s.estado === "libre" || !s.estado) libres++;
-    else if (s.estado === "en_uso_disponible") disponibles++;
-    else if (s.estado === "no_tocar") noTocar++;
+  relevantPuestoIds.forEach(pId => {
+    const pInfo = Store.getPuestoInfo(pId);
+    const count = pInfo.slotsCount || 4;
+    totalSlots += count;
+
+    for (let s = 1; s <= count; s++) {
+      const slotId = pId.length > 2 || pId.includes('_') ? `${pId}_${s}` : `${pId}${s}`;
+      const slot = slots[slotId] || { estado: "libre" };
+
+      if (slot.estado === "libre" || !slot.estado) libres++;
+      else if (slot.estado === "en_uso_disponible") disponibles++;
+      else if (slot.estado === "no_tocar") noTocar++;
+    }
   });
 
-  const total = values.length || 24;
   const libresEl = document.getElementById("metric-libres");
   const dispEl = document.getElementById("metric-disponibles");
   const noTocarEl = document.getElementById("metric-no-tocar");
@@ -85,35 +110,83 @@ function renderMetrics() {
   if (libresEl) libresEl.textContent = libres;
   if (dispEl) dispEl.textContent = disponibles;
   if (noTocarEl) noTocarEl.textContent = noTocar;
-  if (totalEl) totalEl.textContent = `${total - libres}/${total}`;
+  if (totalEl) totalEl.textContent = `${totalSlots - libres}/${totalSlots}`;
+}
+
+function renderPlantasNav() {
+  const container = document.getElementById("plantas-nav");
+  if (!container) return;
+
+  const plantas = Store.getPlantas();
+
+  let html = `
+    <div class="plantas-tabs">
+      <button class="plant-btn ${currentPlantaFilter === 'all' ? 'active' : ''}" data-planta="all">
+        🏢 Todas las Zonas
+      </button>
+  `;
+
+  plantas.forEach(pl => {
+    const totalBahias = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
+    html += `
+      <button class="plant-btn ${currentPlantaFilter === pl.id ? 'active' : ''}" data-planta="${pl.id}">
+        <span>${pl.icono || '🏢'}</span>
+        <span>${pl.nombre}</span>
+        <span class="tab-badge" style="font-size: 0.72rem; margin-left: 0.35rem;">${pl.puestos.length} puestos (${totalBahias} bahías)</span>
+      </button>
+    `;
+  });
+
+  html += `
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <button class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.4rem 0.8rem;" onclick="openEditPuestosModal()" title="Personalizar y editar nombres de puestos">
+        ✏️ Editar Nombres de Puestos
+      </button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  container.querySelectorAll(".plant-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentPlantaFilter = btn.dataset.planta;
+      currentPuestoFilter = "all";
+      renderApp();
+    });
+  });
 }
 
 function renderTabs() {
   const container = document.getElementById("tabs-puestos");
   if (!container) return;
 
-  const puestos = Store.data.puestos || ["A", "B", "C", "D", "E", "F"];
+  const puestos = (currentPlantaFilter === "all")
+    ? (Store.data.puestos || []).map(pid => Store.getPuestoInfo(pid))
+    : Store.getPuestosByPlanta(currentPlantaFilter);
+
   const slots = Store.data.slots || {};
 
   let html = `
     <button class="tab-btn ${currentPuestoFilter === 'all' ? 'active' : ''}" data-puesto="all">
       Todos los Puestos
-      <span class="tab-badge">A - F</span>
+      <span class="tab-badge">${puestos.length}</span>
     </button>
   `;
 
   puestos.forEach(p => {
-    // Contar ocupados en este puesto
     let ocupados = 0;
-    for (let s = 1; s <= 4; s++) {
-      const slot = slots[`${p}${s}`];
+    const count = p.slotsCount || 4;
+    for (let s = 1; s <= count; s++) {
+      const slotId = p.id.length > 2 || p.id.includes('_') ? `${p.id}_${s}` : `${p.id}${s}`;
+      const slot = slots[slotId];
       if (slot && slot.estado !== "libre" && slot.equipo) ocupados++;
     }
 
     html += `
-      <button class="tab-btn ${currentPuestoFilter === p ? 'active' : ''}" data-puesto="${p}">
-        Puesto ${p}
-        <span class="tab-badge" style="${ocupados > 0 ? 'color: var(--accent-cyan)' : ''}">${ocupados}/4</span>
+      <button class="tab-btn ${currentPuestoFilter === p.id ? 'active' : ''}" data-puesto="${p.id}" title="${p.nombre}">
+        ${p.nombre}
+        <span class="tab-badge" style="${ocupados > 0 ? 'color: var(--accent-cyan)' : ''}">${ocupados}/${count}</span>
       </button>
     `;
   });
@@ -123,7 +196,9 @@ function renderTabs() {
   container.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       currentPuestoFilter = btn.dataset.puesto;
-      renderApp();
+      container.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderPuestos();
     });
   });
 }
@@ -132,13 +207,16 @@ function renderPuestos() {
   const container = document.getElementById("puestos-grid");
   if (!container) return;
 
-  const allPuestos = Store.data.puestos || ["A", "B", "C", "D", "E", "F"];
+  const allPuestos = (currentPlantaFilter === "all")
+    ? (Store.data.puestos || [])
+    : Store.getPuestosByPlanta(currentPlantaFilter).map(p => p.id);
+
   const puestosToShow = currentPuestoFilter === "all" ? allPuestos : [currentPuestoFilter];
 
   let html = "";
 
-  puestosToShow.forEach(puestoLetter => {
-    html += renderPuestoCard(puestoLetter);
+  puestosToShow.forEach(puestoId => {
+    html += renderPuestoCard(puestoId);
   });
 
   if (html === "") {
@@ -154,64 +232,68 @@ function renderPuestos() {
   attachCardEvents();
 }
 
-function renderPuestoCard(puesto) {
+function renderPuestoCard(puestoId) {
+  const pInfo = Store.getPuestoInfo(puestoId);
   const slots = Store.data.slots || {};
+  const slotsCount = pInfo.slotsCount || 4;
 
-  // Filtrar si alguno de sus slots cumple con los filtros activos
   let hasMatchingSlots = false;
-  const slotCardsHtml = [1, 2, 3, 4].map(slotNum => {
-    const slotId = `${puesto}${slotNum}`;
-    const slotData = slots[slotId] || { puesto, slot: slotNum, estado: "libre" };
-    
-    // Comprobar filtro de estado
+  const slotCardsHtml = [];
+
+  for (let slotNum = 1; slotNum <= slotsCount; slotNum++) {
+    const slotId = pInfo.id.length > 2 || pInfo.id.includes('_') ? `${pInfo.id}_${slotNum}` : `${pInfo.id}${slotNum}`;
+    const slotData = slots[slotId] || { puesto: pInfo.id, slot: slotNum, estado: "libre" };
+
     if (currentStatusFilter !== "all") {
       const estado = slotData.estado || "libre";
-      if (estado !== currentStatusFilter) return "";
+      if (estado !== currentStatusFilter) continue;
     }
 
-    // Comprobar búsqueda de texto
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const searchable = [
         slotData.equipo, slotData.modelo, slotData.sw, slotData.validacion,
-        slotData.iot, slotData.prueba, slotData.responsable, slotData.descripcion, slotId
+        slotData.iot, slotData.prueba, slotData.responsable, slotData.descripcion, slotId, pInfo.nombre
       ].filter(Boolean).join(" ").toLowerCase();
 
-      if (!searchable.includes(q)) return "";
+      if (!searchable.includes(q)) continue;
     }
 
     hasMatchingSlots = true;
-    return renderSlotCard(slotData, slotId);
-  }).join("");
+    slotCardsHtml.push(renderSlotCard(slotData, slotId));
+  }
 
   if (!hasMatchingSlots && (currentStatusFilter !== "all" || searchQuery)) {
     return "";
   }
 
   return `
-    <div class="puesto-card" id="puesto-card-${puesto}">
+    <div class="puesto-card" id="puesto-card-${pInfo.id}">
       <!-- Cabecera del Puesto -->
       <div class="instrument-panel">
         <div class="instrument-top">
           <div class="puesto-title">
-            <div class="puesto-letter">${puesto}</div>
+            <div class="puesto-letter" style="${pInfo.id.length > 2 ? 'font-size: 1.1rem;' : ''}">${pInfo.id}</div>
             <div class="puesto-meta">
-              <h2>PUESTO DE PRUEBAS ${puesto}</h2>
-              <span>Capacidad: 4 bahías simultáneas (1, 2, 3, 4)</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h2 style="margin: 0;">${pInfo.nombre.toUpperCase()}</h2>
+                <button class="btn-icon" onclick="openRenameSinglePuestoModal('${pInfo.id}', '${pInfo.nombre}')" title="Editar nombre de este puesto" style="background: transparent; border: none; cursor: pointer; opacity: 0.6; font-size: 0.85rem; padding: 0.2rem;">✏️</button>
+              </div>
+              <span>${pInfo.plantaIcono || '🏢'} ${pInfo.plantaNombre} · Capacidad: ${slotsCount} bahías</span>
             </div>
           </div>
           <div class="instrument-tools">
-            <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" onclick="openPuestoQRModal('${puesto}')" title="Generar QR de este puesto">
+            <button class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.72rem;" onclick="openPuestoQRModal('${pInfo.id}')" title="Generar QR de este puesto">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              QR Puesto ${puesto}
+              QR Puesto
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Bahías Físicas (1 Superior Izq, 2 Inferior Izq, 3 Superior Der, 4 Inferior Der) -->
+      <!-- Bahías Físicas -->
       <div class="slots-container">
-        ${slotCardsHtml}
+        ${slotCardsHtml.join("")}
       </div>
     </div>
   `;
@@ -538,6 +620,99 @@ function openPuestoQRModal(puesto) {
 
 function openSlotQRModal(slotId) {
   openQRPrintModal("slots");
+}
+
+/* Edición y Personalización de Nombres de Puestos */
+function openEditPuestosModal() {
+  const modal = document.getElementById("edit-puestos-modal");
+  const container = document.getElementById("edit-puestos-container");
+  if (!container) return;
+
+  const plantas = Store.getPlantas();
+
+  let html = "";
+  plantas.forEach(pl => {
+    html += `
+      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
+        <h4 style="margin: 0 0 0.8rem 0; color: #38bdf8; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+          <span>${pl.icono || '🏢'}</span>
+          <span>${pl.nombre}</span>
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.8rem;">
+    `;
+
+    pl.puestos.forEach(p => {
+      html += `
+        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+          <label style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); font-weight: 700;">
+            ID: ${p.id} (${p.slotsCount || 4} bahías)
+          </label>
+          <input type="text" class="form-input puesto-name-input" data-planta-id="${pl.id}" data-puesto-id="${p.id}" value="${p.nombre}" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;" />
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  modal.classList.add("active");
+}
+
+function closeEditPuestosModal() {
+  document.getElementById("edit-puestos-modal").classList.remove("active");
+}
+
+async function savePuestosConfig() {
+  const inputs = document.querySelectorAll(".puesto-name-input");
+  const plantas = JSON.parse(JSON.stringify(Store.getPlantas()));
+
+  inputs.forEach(inp => {
+    const plantaId = inp.dataset.plantaId;
+    const puestoId = inp.dataset.puestoId;
+    const val = inp.value.trim();
+
+    const pl = plantas.find(item => item.id === plantaId);
+    if (pl) {
+      const p = pl.puestos.find(item => item.id === puestoId);
+      if (p && val) {
+        p.nombre = val;
+      }
+    }
+  });
+
+  closeEditPuestosModal();
+  showToast("Guardando nombres de puestos...", "info");
+
+  const syncResult = await Store.updatePuestosConfig(plantas);
+  if (syncResult && syncResult.github) {
+    showToast("✅ Nombres de puestos guardados y sincronizados en GitHub", "success");
+  } else {
+    showToast("✅ Nombres de puestos actualizados correctamente", "success");
+  }
+
+  renderApp();
+}
+
+async function openRenameSinglePuestoModal(puestoId, currentNombre) {
+  const nuevoNombre = prompt(`Introduce el nuevo nombre para el puesto ${puestoId}:`, currentNombre);
+  if (nuevoNombre && nuevoNombre.trim() && nuevoNombre.trim() !== currentNombre) {
+    const plantas = JSON.parse(JSON.stringify(Store.getPlantas()));
+    for (const pl of plantas) {
+      const p = pl.puestos.find(item => item.id === puestoId);
+      if (p) {
+        p.nombre = nuevoNombre.trim();
+        break;
+      }
+    }
+    showToast("Actualizando nombre...", "info");
+    await Store.updatePuestosConfig(plantas);
+    showToast(`✅ Puesto renombrado a "${nuevoNombre.trim()}"`, "success");
+    renderApp();
+  }
 }
 
 /* Modal Ajustes y Sincronización */
