@@ -1,9 +1,19 @@
 /**
  * Aplicación de Seguimiento de Equipos en Cabina de Pruebas (Fluidra)
- * Soporte Multi-Planta: Planta Cabina (Puestos A-J) y Planta Piloto Laboratorio (Cellguard 1-2, EC 1-2)
+ * Gestión de 7 Zonas: Cabinas Test (A-J), Planta Piloto Cabina, Laboratorio, Cellguard 1-2, EC 1-2
  */
 
-let currentPlantaFilter = "cabina"; // 'cabina' | 'piloto' | 'all'
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+let currentPlantaFilter = "zona1"; // 'all' | 'zona1' | 'zona2' | 'zona3' | 'zona4' | 'zona5' | 'zona6' | 'zona7'
 let currentPuestoFilter = "all";
 let currentStatusFilter = "all";
 let searchQuery = "";
@@ -74,7 +84,7 @@ function renderApp() {
 function renderMetrics() {
   const slots = Store.data.slots || {};
   
-  // Si hay una planta seleccionada, filtrar métricas por esa planta
+  // Si hay una zona seleccionada, filtrar métricas por esa zona
   let relevantPuestoIds = [];
   if (currentPlantaFilter === "all") {
     relevantPuestoIds = Store.data.puestos || [];
@@ -93,7 +103,7 @@ function renderMetrics() {
     totalSlots += count;
 
     for (let s = 1; s <= count; s++) {
-      const slotId = pId.length > 2 || pId.includes('_') ? `${pId}_${s}` : `${pId}${s}`;
+      const slotId = (pId.length === 1) ? `${pId}${s}` : `${pId}_${s}`;
       const slot = slots[slotId] || { estado: "libre" };
 
       if (slot.estado === "libre" || !slot.estado) libres++;
@@ -103,7 +113,7 @@ function renderMetrics() {
   });
 
   const libresEl = document.getElementById("metric-libres");
-  const dispEl = document.getElementById("metric-disponibles");
+  const dispEl = document.getElementById("metric-disponibles") || document.getElementById("metric-en-uso");
   const noTocarEl = document.getElementById("metric-no-tocar");
   const totalEl = document.getElementById("metric-total");
 
@@ -128,20 +138,28 @@ function renderPlantasNav() {
 
   plantas.forEach(pl => {
     const totalBahias = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
+    const isActive = currentPlantaFilter === pl.id;
     html += `
-      <button class="plant-btn ${currentPlantaFilter === pl.id ? 'active' : ''}" data-planta="${pl.id}">
-        <span>${pl.icono || '🏢'}</span>
-        <span>${pl.nombre}</span>
-        <span class="tab-badge" style="font-size: 0.72rem; margin-left: 0.35rem;">${pl.puestos.length} puestos (${totalBahias} bahías)</span>
-      </button>
+      <div style="display: inline-flex; align-items: center; position: relative;">
+        <button class="plant-btn ${isActive ? 'active' : ''}" data-planta="${pl.id}">
+          <span>${pl.icono || '🏢'}</span>
+          <span>${escapeHtml(pl.nombre)}</span>
+          <span class="tab-badge" style="font-size: 0.72rem; margin-left: 0.35rem;">${pl.puestos.length} puestos (${totalBahias} bahías)</span>
+        </button>
+        ${isActive ? `
+          <button class="btn-icon" onclick="event.stopPropagation(); openRenameZonaModal('${pl.id}', '${escapeHtml(pl.nombre)}')" title="Renombrar ${escapeHtml(pl.nombre)}" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius-sm); cursor: pointer; color: #fff; font-size: 0.75rem; padding: 0.3rem 0.45rem; margin-left: 0.25rem;">
+            ✏️
+          </button>
+        ` : ''}
+      </div>
     `;
   });
 
   html += `
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-      <button class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.4rem 0.8rem;" onclick="openEditPuestosModal()" title="Personalizar y editar nombres de puestos">
-        ✏️ Editar Nombres de Puestos
+      <button class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.4rem 0.8rem;" onclick="openEditPuestosModal()" title="Personalizar y editar nombres de puestos y zonas">
+        ✏️ Editar Nombres (Zonas y Puestos)
       </button>
     </div>
   `;
@@ -712,97 +730,9 @@ function openSlotQRModal(slotId) {
   openQRPrintModal("slots");
 }
 
-/* Edición y Personalización de Nombres de Puestos */
-function openEditPuestosModal() {
-  const modal = document.getElementById("edit-puestos-modal");
-  const container = document.getElementById("edit-puestos-container");
-  if (!container) return;
-
-  const plantas = Store.getPlantas();
-
-  let html = "";
-  plantas.forEach(pl => {
-    html += `
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
-        <h4 style="margin: 0 0 0.8rem 0; color: #38bdf8; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
-          <span>${pl.icono || '🏢'}</span>
-          <span>${pl.nombre}</span>
-        </h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.8rem;">
-    `;
-
-    pl.puestos.forEach(p => {
-      html += `
-        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-          <label style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); font-weight: 700;">
-            ID: ${p.id} (${p.slotsCount || 4} bahías)
-          </label>
-          <input type="text" class="form-input puesto-name-input" data-planta-id="${pl.id}" data-puesto-id="${p.id}" value="${p.nombre}" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;" />
-        </div>
-      `;
-    });
-
-    html += `
-        </div>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
-  modal.classList.add("active");
-}
-
-function closeEditPuestosModal() {
-  document.getElementById("edit-puestos-modal").classList.remove("active");
-}
-
-async function savePuestosConfig() {
-  const inputs = document.querySelectorAll(".puesto-name-input");
-  const plantas = JSON.parse(JSON.stringify(Store.getPlantas()));
-
-  inputs.forEach(inp => {
-    const plantaId = inp.dataset.plantaId;
-    const puestoId = inp.dataset.puestoId;
-    const val = inp.value.trim();
-
-    const pl = plantas.find(item => item.id === plantaId);
-    if (pl) {
-      const p = pl.puestos.find(item => item.id === puestoId);
-      if (p && val) {
-        p.nombre = val;
-      }
-    }
-  });
-
-  closeEditPuestosModal();
-  showToast("Guardando nombres de puestos...", "info");
-
-  const syncResult = await Store.updatePuestosConfig(plantas);
-  if (syncResult && syncResult.github) {
-    showToast("✅ Nombres de puestos guardados y sincronizados en GitHub", "success");
-  } else {
-    showToast("✅ Nombres de puestos actualizados correctamente", "success");
-  }
-
-  renderApp();
-}
-
-async function openRenameSinglePuestoModal(puestoId, currentNombre) {
-  const nuevoNombre = prompt(`Introduce el nuevo nombre para el puesto ${puestoId}:`, currentNombre);
-  if (nuevoNombre && nuevoNombre.trim() && nuevoNombre.trim() !== currentNombre) {
-    const plantas = JSON.parse(JSON.stringify(Store.getPlantas()));
-    for (const pl of plantas) {
-      const p = pl.puestos.find(item => item.id === puestoId);
-      if (p) {
-        p.nombre = nuevoNombre.trim();
-        break;
-      }
-    }
-    showToast("Actualizando nombre...", "info");
-    await Store.updatePuestosConfig(plantas);
-    showToast(`✅ Puesto renombrado a "${nuevoNombre.trim()}"`, "success");
-    renderApp();
-  }
+/* Edición y Personalización de Nombres de Zonas y Puestos */
+function openEditZonasModal() {
+  openEditPuestosModal();
 }
 
 /* Modal Ajustes y Sincronización */
@@ -906,6 +836,135 @@ function importDatabaseJSON(event) {
     }
   };
   reader.readAsText(file);
+}
+
+/* ==========================================================================
+   CONFIGURACIÓN Y EDICIÓN DE NOMBRES DE ZONAS Y PUESTOS
+   ========================================================================== */
+
+function openEditPuestosModal() {
+  const container = document.getElementById("edit-puestos-container");
+  if (!container) return;
+
+  const plantas = Store.getPlantas();
+  let html = `
+    <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: #bae6fd; display: flex; align-items: center; gap: 0.6rem;">
+      <span style="font-size: 1.2rem;">💡</span>
+      <span>Aquí puedes editar los nombres identificativos de las <strong>7 Zonas</strong> y de todos los <strong>Puestos</strong>. Al guardar, los cambios se sincronizan en la nube y se reflejan en pantalla y carteles QR.</span>
+    </div>
+  `;
+
+  plantas.forEach((pl, zIdx) => {
+    const totalSlotsInZone = pl.puestos.reduce((acc, p) => acc + (p.slotsCount || 4), 0);
+    html += `
+      <div class="edit-zone-card" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.1rem; margin-bottom: 1rem;">
+        <!-- Edición del Nombre de la Zona -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <span style="font-size: 1.5rem;">${pl.icono || '🏢'}</span>
+          <div style="flex: 1;">
+            <label style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.25rem;">
+              Nombre de la Zona ${zIdx + 1} (${pl.puestos.length} puestos · ${totalSlotsInZone} bahías)
+            </label>
+            <input type="text" class="form-input zone-name-input" data-zone-id="${pl.id}" value="${escapeHtml(pl.nombre)}" placeholder="Ej: Zona ${zIdx + 1}: Nombre descriptivo" style="font-size: 0.95rem; font-weight: 700; color: #fff; background: rgba(0,0,0,0.35); border-color: rgba(56,189,248,0.3);" />
+          </div>
+        </div>
+
+        <!-- Puestos asignados a esta zona -->
+        <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem; font-weight: 700; letter-spacing: 0.05em;">
+          Puestos de trabajo configurados:
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem;">
+    `;
+
+    pl.puestos.forEach(p => {
+      html += `
+        <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 0.6rem 0.8rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--accent-cyan); background: rgba(56,189,248,0.15); padding: 0.1rem 0.45rem; border-radius: 4px;">
+              ID: ${p.id}
+            </span>
+            <span style="font-size: 0.7rem; color: var(--text-dim);">
+              ${p.slotsCount || 4} bahías
+            </span>
+          </div>
+          <input type="text" class="form-input puesto-name-input" data-puesto-id="${p.id}" value="${escapeHtml(p.nombre)}" placeholder="Nombre del puesto" style="font-size: 0.82rem; padding: 0.35rem 0.6rem;" />
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  const modal = document.getElementById("edit-puestos-modal");
+  if (modal) modal.classList.add("active");
+}
+
+function closeEditPuestosModal() {
+  const modal = document.getElementById("edit-puestos-modal");
+  if (modal) modal.classList.remove("active");
+}
+
+async function savePuestosConfig() {
+  const container = document.getElementById("edit-puestos-container");
+  if (!container) return;
+
+  const currentPlantas = JSON.parse(JSON.stringify(Store.getPlantas()));
+
+  // 1. Recoger nombres de Zonas
+  container.querySelectorAll(".zone-name-input").forEach(input => {
+    const zoneId = input.dataset.zoneId;
+    const newName = input.value.trim();
+    if (newName) {
+      const pl = currentPlantas.find(z => z.id === zoneId);
+      if (pl) pl.nombre = newName;
+    }
+  });
+
+  // 2. Recoger nombres de Puestos
+  container.querySelectorAll(".puesto-name-input").forEach(input => {
+    const puestoId = input.dataset.puestoId;
+    const newName = input.value.trim();
+    if (newName) {
+      for (const pl of currentPlantas) {
+        const p = pl.puestos.find(item => item.id === puestoId);
+        if (p) {
+          p.nombre = newName;
+          break;
+        }
+      }
+    }
+  });
+
+  closeEditPuestosModal();
+  showToast("💾 Guardando nombres de zonas y puestos...", "info");
+
+  await Store.updatePuestosConfig(currentPlantas);
+  renderApp();
+  showToast("✅ Nombres de zonas y puestos actualizados y sincronizados.", "success");
+}
+
+async function openRenameSinglePuestoModal(puestoId, currentNombre) {
+  const nuevoNombre = prompt(`Editar nombre del puesto "${puestoId}":`, currentNombre || `Puesto ${puestoId}`);
+  if (nuevoNombre !== null && nuevoNombre.trim() && nuevoNombre.trim() !== currentNombre) {
+    showToast(`Guardando nuevo nombre para puesto ${puestoId}...`, "info");
+    await Store.updatePuestoNombre(puestoId, nuevoNombre.trim());
+    renderApp();
+    showToast(`✅ Puesto renombrado a "${nuevoNombre.trim()}"`, "success");
+  }
+}
+
+async function openRenameZonaModal(zonaId, currentNombre) {
+  const nuevoNombre = prompt(`Editar nombre de la Zona:`, currentNombre);
+  if (nuevoNombre !== null && nuevoNombre.trim() && nuevoNombre.trim() !== currentNombre) {
+    showToast("Guardando nuevo nombre de zona...", "info");
+    await Store.updateZonaNombre(zonaId, nuevoNombre.trim());
+    renderApp();
+    showToast(`✅ Zona renombrada a "${nuevoNombre.trim()}"`, "success");
+  }
 }
 
 /* UI Listeners */
