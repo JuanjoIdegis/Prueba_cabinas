@@ -1200,3 +1200,133 @@ body {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* ==================== RASTREADOR GLOBAL DE EQUIPOS ==================== */
+.eq-track-chip {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.73rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.eq-track-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.eq-track-chip.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.track-active-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.25));
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+.track-active-banner.no_tocar {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12), rgba(136, 19, 55, 0.25));
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 4px 20px rgba(244, 63, 94, 0.15);
+}
+
+.track-inactive-banner {
+  background: rgba(30, 41, 59, 0.35);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.track-timeline {
+  position: relative;
+  padding-left: 1.8rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.track-timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: linear-gradient(to bottom, #38bdf8, rgba(56, 189, 248, 0.1));
+}
+
+.track-timeline-item {
+  position: relative;
+}
+
+.track-timeline-node {
+  position: absolute;
+  left: -1.8rem;
+  top: 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0284c7;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
+}
+
+.track-timeline-node.active-now {
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4);
+  animation: pulse-node 2s infinite;
+}
+
+@keyframes pulse-node {
+  0% { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.8); }
+  100% { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); }
+}
+
+.track-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  transition: border-color 0.2s;
+}
+
+.track-card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.slot-highlight-pulse {
+  animation: highlight-pulse 2.5s ease-out;
+}
+
+@keyframes highlight-pulse {
+  0% { outline: 4px solid #38bdf8; box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); transform: scale(1.02); }
+  50% { outline: 4px solid #38bdf8; box-shadow: 0 0 35px rgba(56, 189, 248, 0.9); transform: scale(1.02); }
+  100% { outline: none; box-shadow: none; transform: scale(1); }
+}
