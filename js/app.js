@@ -661,28 +661,46 @@ function closeImageViewer() {
 /* Modal Conexión Móvil */
 function openMobileConnectModal() {
   const modal = document.getElementById("mobile-connect-modal");
-  const url = Store.networkInfo.network_url || `http://${window.location.hostname}:5050`;
-  
-  document.getElementById("mobile-url-text").textContent = url;
-  document.getElementById("mobile-ip-badge").textContent = `IP: ${Store.networkInfo.ip || window.location.hostname}`;
+  if (!modal) return;
+
+  // Determinar la URL para que el móvil se conecte
+  let url = window.location.href.split("#")[0].split("?")[0];
+  if (Store.networkInfo && Store.networkInfo.network_url) {
+    url = Store.networkInfo.network_url;
+  }
+
+  const urlEl = document.getElementById("mobile-url-text");
+  if (urlEl) urlEl.textContent = url;
+
+  const badgeEl = document.getElementById("mobile-ip-badge");
+  if (badgeEl) {
+    if (window.location.hostname.includes("github.io")) {
+      badgeEl.textContent = "🌐 Acceso Cloud GitHub Pages";
+    } else {
+      badgeEl.textContent = `Host: ${window.location.hostname}`;
+    }
+  }
 
   const qrContainer = document.getElementById("mobile-qr-canvas");
-  qrContainer.innerHTML = "";
-  if (typeof QRCode !== "undefined") {
-    new QRCode(qrContainer, {
-      text: url,
-      width: 220,
-      height: 220,
-      colorDark: "#0f172a",
-      colorLight: "#ffffff"
-    });
+  if (qrContainer) {
+    qrContainer.innerHTML = "";
+    if (typeof QRCode !== "undefined") {
+      new QRCode(qrContainer, {
+        text: url,
+        width: 220,
+        height: 220,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff"
+      });
+    }
   }
 
   modal.classList.add("active");
 }
 
 function closeMobileConnectModal() {
-  document.getElementById("mobile-connect-modal").classList.remove("active");
+  const modal = document.getElementById("mobile-connect-modal");
+  if (modal) modal.classList.remove("active");
 }
 
 /* Escáner de Códigos QR con Cámara */
