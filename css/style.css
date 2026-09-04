@@ -591,12 +591,11 @@ body {
 }
 
 
-/* Grilla física de las 4 bahías (1 y 2 izq, 3 y 4 der) */
+/* Grilla física de las bahías (4 en puestos estándar, 5 en Cellguard) */
 .slots-container {
   padding: 1.2rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.1rem;
   flex: 1;
 }
