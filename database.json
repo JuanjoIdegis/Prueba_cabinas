@@ -12,7 +12,7 @@
     "A1": {
       "puesto": "A",
       "slot": 1,
-      "estado": "no_tocar",
+      "estado": "libre",
       "equipo": "",
       "modelo": "",
       "sw": "",
@@ -24,8 +24,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-04T07:51:49.415Z",
-      "slot_id": "A1"
+      "updated_at": "2026-09-04T07:52:12.648Z"
     },
     "A2": {
       "puesto": "A",
