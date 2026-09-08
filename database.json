@@ -811,8 +811,8 @@
     "J1": {
       "puesto": "J",
       "slot": 1,
-      "estado": "libre",
-      "equipo": "",
+      "estado": "en_uso_disponible",
+      "equipo": "Prueba",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -823,7 +823,9 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": ""
+      "updated_at": "2026-09-08T10:46:03.660Z",
+      "slot_id": "J1",
+      "datalogger": false
     },
     "J2": {
       "puesto": "J",
