@@ -439,22 +439,6 @@ const Store = {
       localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
       this.notify();
     }
-
-    // Mostrar banner de aviso si este móvil tiene equipos locales pendientes de subir a GitHub
-    if (typeof window !== "undefined") {
-      const banner = document.getElementById("pending-local-upload-banner");
-      const bannerText = document.getElementById("pending-local-upload-text");
-      if (banner) {
-        if (localPendingSlots.length > 0) {
-          banner.style.display = "flex";
-          if (bannerText) {
-            bannerText.textContent = `📱 Tienes ${localPendingSlots.length} hueco(s) guardados en este móvil (${localPendingSlots.slice(0, 4).join(", ")}${localPendingSlots.length > 4 ? '...' : ''}) pendientes de subir a GitHub.`;
-          }
-        } else {
-          banner.style.display = "none";
-        }
-      }
-    }
   },
 
   _parseSlotId(slotId, slotData = null) {
