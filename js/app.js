@@ -512,16 +512,18 @@ function renderSlotCard(slot, slotId) {
         </div>
       ` : `
         <div class="slot-body">
-          <div class="equipment-thumb" onclick="openImageViewer('${slot.imagen || 'app/img/cabina_puesto_f.png'}', '${slot.equipo || slotId}')">
-            ${slot.imagen ? `
-              <img src="${slot.imagen}" alt="${slot.equipo}" loading="lazy" />
-            ` : `
+          ${slot.imagen ? `
+            <div class="equipment-thumb has-image" onclick="openImageViewer('${slot.imagen}', '${escapeHtml(slot.equipo || slotId)}')" title="Ver foto ampliada">
+              <img src="${slot.imagen}" alt="${escapeHtml(slot.equipo || '')}" loading="lazy" />
+            </div>
+          ` : `
+            <div class="equipment-thumb" onclick="openEditModal('${slotId}')" title="Clic para conectar o añadir foto">
               <div class="no-img">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 <span>Foto</span>
               </div>
-            `}
-          </div>
+            </div>
+          `}
 
           <div class="equipment-info">
             <div class="eq-title" title="${slot.equipo || ''}">${slot.equipo || 'Sin identificador'}</div>
@@ -656,11 +658,12 @@ function updateImagePreview(src) {
 async function handleImageFile(file) {
   if (!file) return;
   try {
-    showToast("Comprimiendo imagen...", "success");
+    showToast("Comprimiendo y optimizando foto...", "info");
     const compressedDataUrl = await Store.compressImage(file);
     currentTempImageData = compressedDataUrl;
     updateImagePreview(compressedDataUrl);
-    showToast("Imagen lista", "success");
+    const approxKB = Math.round((compressedDataUrl.length * 3 / 4) / 1024);
+    showToast(`Foto optimizada con éxito (${approxKB} KB)`, "success");
   } catch (e) {
     console.error(e);
     showToast("Error al procesar imagen", "error");
@@ -734,14 +737,21 @@ async function confirmarLiberar(slotId) {
 
 /* Visor de Imágenes a Pantalla Completa */
 function openImageViewer(src, title = "Foto del Equipo") {
+  if (!src || src.includes("undefined") || src.includes("null")) return;
   const modal = document.getElementById("image-viewer-modal");
+  if (!modal) return;
   document.getElementById("viewer-img-title").textContent = title;
   document.getElementById("viewer-img-src").src = src;
   modal.classList.add("active");
 }
 
 function closeImageViewer() {
-  document.getElementById("image-viewer-modal").classList.remove("active");
+  const modal = document.getElementById("image-viewer-modal");
+  if (modal) {
+    modal.classList.remove("active");
+    const img = document.getElementById("viewer-img-src");
+    if (img) img.src = "";
+  }
 }
 
 /* Modal Conexión Móvil */
@@ -1659,7 +1669,7 @@ function renderHistorico() {
 
           <div style="display: flex; gap: 0.8rem; align-items: flex-start; margin-top: 0.4rem;">
             ${activeSlot.imagen ? `
-              <div style="width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);" onclick="openImageViewer('${activeSlot.imagen}', '${escapeHtml(activeSlot.equipo)}')">
+              <div style="width: 60px; height: 60px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
                 <img src="${activeSlot.imagen}" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto actual" />
               </div>
             ` : ''}
@@ -1706,10 +1716,10 @@ function renderHistorico() {
 
   container.innerHTML = activeSlotBannerHtml + archiveHeader + filtered.map(item => `
     <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; display: flex; gap: 1rem; align-items: flex-start; transition: all 0.2s ease;">
-      <!-- Thumbnail de Foto -->
-      <div style="width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openImageViewer('${item.imagen || 'app/img/cabina_puesto_f.png'}', '${item.equipo}')">
+      <!-- Thumbnail de Foto informativo -->
+      <div style="width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
         ${item.imagen ? `
-          <img src="${item.imagen}" style="width: 100%; height: 100%; object-fit: cover;" alt="${item.equipo}" />
+          <img src="${item.imagen}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHtml(item.equipo || '')}" />
         ` : `
           <span style="font-size: 1.5rem; opacity: 0.4;">📦</span>
         `}
