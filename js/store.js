@@ -297,21 +297,33 @@ const Store = {
         this.githubSha = ghJson.sha;
         this.isGitHubConnected = true;
 
-        // Decodificar Base64 seguro con UTF-8
-        const rawContent = ghJson.content.replace(/\s/g, "");
-        const binaryString = atob(rawContent);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+        let remoteData = null;
+        // Si el archivo es menor de 1MB, GitHub devuelve ghJson.content en Base64
+        if (ghJson.content && ghJson.content.trim()) {
+          const rawContent = ghJson.content.replace(/\s/g, "");
+          const binaryString = atob(rawContent);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const decodedText = new TextDecoder("utf-8").decode(bytes);
+          remoteData = JSON.parse(decodedText);
+        } else {
+          // Si el archivo supera 1MB (fotos en base64), GitHub devuelve content vacío; solicitar con cabecera raw
+          const rawHeaders = { ...headers, "Accept": "application/vnd.github.v3.raw" };
+          const rawRes = await fetch(url, { headers: rawHeaders, cache: "no-store" });
+          if (rawRes.ok) {
+            remoteData = await rawRes.json();
+          }
         }
-        const decodedText = new TextDecoder("utf-8").decode(bytes);
-        const remoteData = JSON.parse(decodedText);
 
-        this.applyRemoteData(remoteData);
-        this.lastSyncTime = new Date();
-        this.isOnline = true;
-        loaded = true;
-        return;
+        if (remoteData) {
+          this.applyRemoteData(remoteData);
+          this.lastSyncTime = new Date();
+          this.isOnline = true;
+          loaded = true;
+          return;
+        }
       }
     } catch (err) {
       if (!silent) console.warn("No se pudo consultar GitHub API directa:", err);
@@ -359,19 +371,7 @@ const Store = {
     if (!remoteData || !remoteData.slots) return;
 
     let hasChanges = false;
-    let localHasUnsavedData = false;
     if (!this.data.slots) this.data.slots = {};
-
-    // Comprobar si local tiene datos de equipos activos que no están en el remoto
-    Object.keys(this.data.slots).forEach(sId => {
-      const s = this.data.slots[sId];
-      if (s && s.equipo && s.equipo.trim() && s.estado !== "libre") {
-        const remoteS = remoteData.slots[sId];
-        if (!remoteS || !remoteS.equipo || !remoteS.equipo.trim()) {
-          localHasUnsavedData = true;
-        }
-      }
-    });
 
     Object.keys(remoteData.slots).forEach(slotId => {
       const remoteSlot = remoteData.slots[slotId];
@@ -381,17 +381,12 @@ const Store = {
         this.data.slots[slotId] = remoteSlot;
         hasChanges = true;
       } else {
-        const localHasEquipo = localSlot.equipo && localSlot.equipo.trim() && localSlot.estado !== "libre";
-        const remoteHasEquipo = remoteSlot.equipo && remoteSlot.equipo.trim() && remoteSlot.estado !== "libre";
+        const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
+        const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
 
-        // Si el local tiene datos y el remoto está vacío, PRESERVAR EL LOCAL DEL USUARIO
-        if (localHasEquipo && !remoteHasEquipo) {
-          localHasUnsavedData = true;
-        } else {
-          const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
-          const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
-
-          if (remoteTime > localTime) {
+        // Si el remoto es igual o más reciente, o si el remoto tiene datos y local no
+        if (remoteTime >= localTime) {
+          if (JSON.stringify(remoteSlot) !== JSON.stringify(localSlot)) {
             this.data.slots[slotId] = remoteSlot;
             hasChanges = true;
           }
@@ -426,21 +421,6 @@ const Store = {
     if (hasChanges) {
       localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
       this.notify();
-    }
-
-    // Si detectamos que en este dispositivo hay datos que no están en GitHub, subirlos de inmediato
-    if (localHasUnsavedData) {
-      console.log("Detectados datos locales pendientes de sincronizar con GitHub. Subiendo ahora...");
-      setTimeout(() => {
-        this.saveToGitHub("Sincronizar equipos pendientes guardados localmente").then(res => {
-          if (res && res.github) {
-            console.log("✅ Datos locales sincronizados con éxito en GitHub.");
-            if (typeof showToast === "function") {
-              showToast("☁️ ¡Tus equipos se han sincronizado con éxito en GitHub!", "success");
-            }
-          }
-        });
-      }, 600);
     }
   },
 
@@ -1072,12 +1052,7 @@ const Store = {
     if (trimmed) {
       localStorage.setItem("github_token", trimmed);
       this.isGitHubConnected = true;
-      console.log("Token establecido. Sincronizando datos locales con GitHub...");
-      try {
-        await this.saveToGitHub("Sincronización de datos tras autorizar dispositivo");
-      } catch (e) {
-        console.warn("Error en sincronización tras autorizar:", e);
-      }
+      console.log("Token establecido. Descargando datos desde GitHub...");
     } else {
       localStorage.removeItem("github_token");
       this.isGitHubConnected = false;
