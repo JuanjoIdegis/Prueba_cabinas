@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=v2.7.1-2026.09.08-1236" />
+  <link rel="stylesheet" href="css/style.css?v=v2.7.2-2026.09.08-1241" />
 </head>
 <body>
 
@@ -22,7 +22,7 @@
           <h1>
             CABINA DE PRUEBAS 
             <span class="badge-pill">FLUIDRA LAB</span>
-            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-1236" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.7.1 · 08/09 12:36</span>
+            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-1241" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.7.2 · 08/09 12:41</span>
             <span class="badge-pill" id="cloud-sync-status-badge" onclick="event.stopPropagation(); openSyncModal();" style="cursor: pointer; font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 9999px; transition: all 0.2s ease;" title="Estado de conexión con GitHub">☁️ Comprobando...</span>
           </h1>
           <p>Control y trazabilidad de ensayos · Planta Cabina & Planta Piloto</p>
@@ -89,6 +89,14 @@
   <!-- Banner de aviso si el dispositivo no está autorizado -->
   <div id="cloud-auth-banner" style="display: none; background: linear-gradient(90deg, #ea580c, #c2410c); color: #ffffff; text-align: center; font-size: 0.82rem; font-weight: 600; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);" onclick="openSyncModal()">
     ⚠️ ATENCIÓN: Este dispositivo NO está conectado a GitHub. Los cambios solo se guardan en este móvil. <u>Toca aquí para conectar</u>
+  </div>
+
+  <!-- Banner si se detectan equipos guardados localmente en este móvil que faltan en GitHub -->
+  <div id="pending-local-upload-banner" style="display: none; background: linear-gradient(90deg, #2563eb, #1d4ed8); color: #ffffff; text-align: center; font-size: 0.82rem; font-weight: 600; padding: 0.6rem 1rem; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4); align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+    <span id="pending-local-upload-text">📱 Tienes equipos guardados en este dispositivo que aún no se han subido a GitHub.</span>
+    <button class="btn btn-primary" style="background: #ffffff; color: #1e40af; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.85rem; border: none; border-radius: 9999px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" onclick="syncNowFromDevice()">
+      ☁️ Subir a GitHub Ahora
+    </button>
   </div>
 
   <!-- Barra de Filtros y Selector de Puestos -->
@@ -539,15 +547,20 @@
           </small>
         </div>
 
-        <!-- Estado de Sincronización Automática en Tiempo Real -->
-        <div style="margin-bottom: 1.2rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 0.85rem; display: flex; align-items: center; gap: 0.75rem;">
-          <span style="font-size: 1.5rem;">⚡</span>
-          <div>
-            <div style="font-size: 0.82rem; font-weight: 600; color: #10b981;">Sincronización Automática Activa</div>
-            <div style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.35; margin-top: 0.15rem;">
-              Todos los cambios (equipos, fotos, movimientos de hueco y estados) se guardan y sincronizan automáticamente en GitHub en tiempo real. No es necesario realizar subidas manuales.
+        <!-- Estado de Sincronización Automática en Tiempo Real y Subida de Emergencia -->
+        <div style="margin-bottom: 1.2rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem;">
+            <span style="font-size: 1.4rem;">⚡</span>
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 600; color: #10b981;">Sincronización en Tiempo Real</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.35; margin-top: 0.15rem;">
+                Cada cambio se sube y sincroniza automáticamente con GitHub.
+              </div>
             </div>
           </div>
+          <button type="button" class="btn btn-primary" style="width: 100%; font-size: 0.82rem; padding: 0.55rem; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);" onclick="syncNowFromDevice()">
+            ☁️ Subir datos y fotos de este dispositivo a GitHub ahora
+          </button>
         </div>
 
         <!-- Copia de seguridad -->
@@ -690,11 +703,11 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=v2.7.1-2026.09.08-1236"></script>
-  <script src="js/jsqr.min.js?v=v2.7.1-2026.09.08-1236"></script>
-  <script src="js/store.js?v=v2.7.1-2026.09.08-1236"></script>
-  <script src="js/qr-scanner.js?v=v2.7.1-2026.09.08-1236"></script>
-  <script src="js/qr-generator.js?v=v2.7.1-2026.09.08-1236"></script>
-  <script src="js/app.js?v=v2.7.1-2026.09.08-1236"></script>
+  <script src="js/qrcode.min.js?v=v2.7.2-2026.09.08-1241"></script>
+  <script src="js/jsqr.min.js?v=v2.7.2-2026.09.08-1241"></script>
+  <script src="js/store.js?v=v2.7.2-2026.09.08-1241"></script>
+  <script src="js/qr-scanner.js?v=v2.7.2-2026.09.08-1241"></script>
+  <script src="js/qr-generator.js?v=v2.7.2-2026.09.08-1241"></script>
+  <script src="js/app.js?v=v2.7.2-2026.09.08-1241"></script>
 </body>
 </html>
