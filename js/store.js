@@ -331,20 +331,33 @@ const Store = {
         });
         if (res.ok) {
           const json = await res.json();
-          this.githubSha = json.sha;
-          const binaryStr = atob(json.content.replace(/\s/g, ""));
-          const bytes = new Uint8Array(binaryStr.length);
-          for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
+          let remoteData = null;
+          if (json.content) {
+            const binaryStr = atob(json.content.replace(/\s/g, ""));
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) {
+              bytes[i] = binaryStr.charCodeAt(i);
+            }
+            const decodedText = new TextDecoder("utf-8").decode(bytes);
+            remoteData = JSON.parse(decodedText);
+          } else if (json.download_url) {
+            const dlRes = await fetch(json.download_url + (json.download_url.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
+              headers: { "Authorization": `Bearer ${token}` },
+              cache: "no-store"
+            });
+            if (dlRes.ok) {
+              remoteData = await dlRes.json();
+            }
           }
-          const decodedText = new TextDecoder("utf-8").decode(bytes);
-          const remoteData = JSON.parse(decodedText);
-          this.applyRemoteData(remoteData);
-          this.isGitHubConnected = true;
-          this.isOnline = true;
-          this.lastSyncTime = new Date();
-          loaded = true;
-          return;
+
+          if (remoteData) {
+            this.applyRemoteData(remoteData);
+            this.isGitHubConnected = true;
+            this.isOnline = true;
+            this.lastSyncTime = new Date();
+            loaded = true;
+            return;
+          }
         }
       } catch (e) {
         console.warn("GitHub API no disponible en este momento:", e);
