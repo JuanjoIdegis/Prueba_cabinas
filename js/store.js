@@ -296,9 +296,20 @@ const Store = {
   applyRemoteData(remoteData) {
     if (!remoteData || !remoteData.slots) return;
 
-    // Fusión inteligente: Solo sobrescribir una bahía si el dato remoto es más reciente
     let hasChanges = false;
+    let localHasUnsavedData = false;
     if (!this.data.slots) this.data.slots = {};
+
+    // Comprobar si local tiene datos de equipos activos que no están en el remoto
+    Object.keys(this.data.slots).forEach(sId => {
+      const s = this.data.slots[sId];
+      if (s && s.equipo && s.equipo.trim() && s.estado !== "libre") {
+        const remoteS = remoteData.slots[sId];
+        if (!remoteS || !remoteS.equipo || !remoteS.equipo.trim()) {
+          localHasUnsavedData = true;
+        }
+      }
+    });
 
     Object.keys(remoteData.slots).forEach(slotId => {
       const remoteSlot = remoteData.slots[slotId];
@@ -308,13 +319,20 @@ const Store = {
         this.data.slots[slotId] = remoteSlot;
         hasChanges = true;
       } else {
-        const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
-        const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
+        const localHasEquipo = localSlot.equipo && localSlot.equipo.trim() && localSlot.estado !== "libre";
+        const remoteHasEquipo = remoteSlot.equipo && remoteSlot.equipo.trim() && remoteSlot.estado !== "libre";
 
-        // Si el remoto es estrictamente más reciente que nuestra copia local
-        if (remoteTime > localTime) {
-          this.data.slots[slotId] = remoteSlot;
-          hasChanges = true;
+        // Si el local tiene datos y el remoto está vacío, PRESERVAR EL LOCAL DEL USUARIO
+        if (localHasEquipo && !remoteHasEquipo) {
+          localHasUnsavedData = true;
+        } else {
+          const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
+          const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
+
+          if (remoteTime > localTime) {
+            this.data.slots[slotId] = remoteSlot;
+            hasChanges = true;
+          }
         }
       }
     });
@@ -346,6 +364,21 @@ const Store = {
     if (hasChanges) {
       localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
       this.notify();
+    }
+
+    // Si detectamos que en este dispositivo hay datos que no están en GitHub, subirlos de inmediato
+    if (localHasUnsavedData) {
+      console.log("Detectados datos locales pendientes de sincronizar con GitHub. Subiendo ahora...");
+      setTimeout(() => {
+        this.saveToGitHub("Sincronizar equipos pendientes guardados localmente").then(res => {
+          if (res && res.github) {
+            console.log("✅ Datos locales sincronizados con éxito en GitHub.");
+            if (typeof showToast === "function") {
+              showToast("☁️ ¡Tus equipos se han sincronizado con éxito en GitHub!", "success");
+            }
+          }
+        });
+      }, 600);
     }
   },
 
@@ -753,12 +786,13 @@ const Store = {
         }
       }
 
-      // Codificar contenido a Base64 con UTF-8
+      // Codificar contenido a Base64 con UTF-8 usando chunks rápidos
       const jsonString = JSON.stringify(this.data, null, 2);
       const utf8Bytes = new TextEncoder().encode(jsonString);
       let binaryStr = "";
-      for (let i = 0; i < utf8Bytes.length; i++) {
-        binaryStr += String.fromCharCode(utf8Bytes[i]);
+      const chunkSize = 8192;
+      for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binaryStr += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
       }
       const contentBase64 = btoa(binaryStr);
 
@@ -831,12 +865,20 @@ const Store = {
     }
   },
 
-  setGitHubToken(token) {
+  async setGitHubToken(token) {
     const trimmed = (token || "").trim();
     if (trimmed) {
       localStorage.setItem("github_token", trimmed);
+      this.isGitHubConnected = true;
+      console.log("Token establecido. Sincronizando datos locales con GitHub...");
+      try {
+        await this.saveToGitHub("Sincronización de datos tras autorizar dispositivo");
+      } catch (e) {
+        console.warn("Error en sincronización tras autorizar:", e);
+      }
     } else {
       localStorage.removeItem("github_token");
+      this.isGitHubConnected = false;
     }
     return this.fetchData();
   },
