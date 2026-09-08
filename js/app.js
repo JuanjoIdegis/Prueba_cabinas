@@ -840,6 +840,8 @@ async function saveSlotForm() {
     showToast(`✅ ${targetSlotId} sincronizado en GitHub`, "success");
   } else if (syncResult && syncResult.localOnly) {
     showToast(`⚠️ ${targetSlotId} guardado SOLO en este móvil (Falta autorizar GitHub)`, "warning");
+  } else if (syncResult && !syncResult.success) {
+    showToast(`⚠️ Guardado en móvil, pero falló GitHub: ${syncResult.error || 'Reintentando...'}`, "warning");
   } else {
     showToast(`✅ ${targetSlotId} actualizado`, "success");
   }
