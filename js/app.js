@@ -409,7 +409,7 @@ function renderPuestoCard(puestoId) {
       slotId,
       slotNum,
       estado: isActuallyLibre ? "libre" : (estado === "no_tocar" ? "no_tocar" : "en_uso_disponible"),
-      equipo: slotData.equipo || (slotData.iot ? `IoT: ${slotData.iot}` : (slotData.imagen ? 'Con Foto' : '')),
+      equipo: slotData.equipo || slotData.iot || (slotData.imagen ? 'Con Foto' : ''),
       modelo: slotData.modelo || "",
       datalogger: !!slotData.datalogger
     });
