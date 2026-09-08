@@ -322,35 +322,17 @@ const Store = {
     if (token) {
       try {
         const ghUrl = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`;
+        // 1. Intentar descargar directamente con application/vnd.github.v3.raw para evitar caché de CDN y límite de 1MB
         const res = await fetch(ghUrl, {
           headers: {
             "Authorization": `Bearer ${token}`,
-            "Accept": "application/vnd.github.v3+json"
+            "Accept": "application/vnd.github.v3.raw"
           },
           cache: "no-store"
         });
         if (res.ok) {
-          const json = await res.json();
-          let remoteData = null;
-          if (json.content) {
-            const binaryStr = atob(json.content.replace(/\s/g, ""));
-            const bytes = new Uint8Array(binaryStr.length);
-            for (let i = 0; i < binaryStr.length; i++) {
-              bytes[i] = binaryStr.charCodeAt(i);
-            }
-            const decodedText = new TextDecoder("utf-8").decode(bytes);
-            remoteData = JSON.parse(decodedText);
-          } else if (json.download_url) {
-            const dlRes = await fetch(json.download_url + (json.download_url.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
-              headers: { "Authorization": `Bearer ${token}` },
-              cache: "no-store"
-            });
-            if (dlRes.ok) {
-              remoteData = await dlRes.json();
-            }
-          }
-
-          if (remoteData) {
+          const remoteData = await res.json();
+          if (remoteData && remoteData.slots) {
             this.applyRemoteData(remoteData);
             this.isGitHubConnected = true;
             this.isOnline = true;
@@ -360,7 +342,7 @@ const Store = {
           }
         }
       } catch (e) {
-        console.warn("GitHub API no disponible en este momento:", e);
+        console.warn("GitHub API raw no disponible, intentando estándar:", e);
       }
     }
 
@@ -442,12 +424,35 @@ const Store = {
       }
     });
 
-    // Fusión de histórico
+    // Fusión de lista de eliminados y purga de histórico
+    if (remoteData.deleted_historico_ids && Array.isArray(remoteData.deleted_historico_ids)) {
+      if (!this.data.deleted_historico_ids) this.data.deleted_historico_ids = [];
+      remoteData.deleted_historico_ids.forEach(dId => {
+        if (!this.data.deleted_historico_ids.includes(dId)) {
+          this.data.deleted_historico_ids.push(dId);
+        }
+      });
+    }
+
+    const deletedSet = new Set(this.data.deleted_historico_ids || []);
+
+    // Purgar de local cualquier elemento que figure en la lista de eliminados
+    if (this.data.historico && Array.isArray(this.data.historico)) {
+      const prevLen = this.data.historico.length;
+      this.data.historico = this.data.historico.filter((h, idx) => {
+        const id = h.id || `hist_idx_${idx}`;
+        return !deletedSet.has(id);
+      });
+      if (this.data.historico.length !== prevLen) hasChanges = true;
+    }
+
+    // Fusión de histórico remoto respetando estrictamente los eliminados
     if (remoteData.historico && Array.isArray(remoteData.historico)) {
       if (!this.data.historico) this.data.historico = [];
-      const existingIds = new Set(this.data.historico.map(h => h.id));
-      remoteData.historico.forEach(h => {
-        if (!existingIds.has(h.id)) {
+      const existingIds = new Set(this.data.historico.map((h, idx) => h.id || `hist_idx_${idx}`));
+      remoteData.historico.forEach((h, idx) => {
+        const hId = h.id || `hist_idx_${idx}`;
+        if (!existingIds.has(hId) && !deletedSet.has(hId)) {
           this.data.historico.push(h);
           hasChanges = true;
         }
@@ -994,6 +999,12 @@ const Store = {
 
   async eliminarItemHistorico(histId) {
     if (!this.data.historico || !Array.isArray(this.data.historico)) return false;
+
+    if (!this.data.deleted_historico_ids) this.data.deleted_historico_ids = [];
+    if (!this.data.deleted_historico_ids.includes(histId)) {
+      this.data.deleted_historico_ids.push(histId);
+    }
+
     const initialLen = this.data.historico.length;
     this.data.historico = this.data.historico.filter((h, idx) => {
       const idMatch = h.id ? (h.id === histId) : (`hist_idx_${idx}` === histId);
@@ -1007,6 +1018,13 @@ const Store = {
   },
 
   async vaciarHistorico() {
+    if (!this.data.deleted_historico_ids) this.data.deleted_historico_ids = [];
+    (this.data.historico || []).forEach((h, idx) => {
+      const id = h.id || `hist_idx_${idx}`;
+      if (!this.data.deleted_historico_ids.includes(id)) {
+        this.data.deleted_historico_ids.push(id);
+      }
+    });
     const total = (this.data.historico || []).length;
     this.data.historico = [];
     this._saveLocalCache();
@@ -1031,25 +1049,31 @@ const Store = {
     }
 
     try {
-      if (!this.githubSha) {
-        const getUrl = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`;
-        const getRes = await fetch(getUrl, {
+      // 1. Obtener siempre el SHA más reciente del archivo en GitHub para evitar 409
+      try {
+        const getShaUrl = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`;
+        const shaRes = await fetch(getShaUrl, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Accept": "application/vnd.github.v3+json"
-          }
+          },
+          cache: "no-store"
         });
-        if (getRes.ok) {
-          const getJson = await getRes.json();
-          this.githubSha = getJson.sha;
+        if (shaRes.ok) {
+          const shaData = await shaRes.json();
+          this.githubSha = shaData.sha;
         }
+      } catch (errSha) {
+        console.warn("No se pudo obtener SHA previo:", errSha);
       }
 
+      // 2. Serializar y codificar en base64 de manera ultrarrápida en bloques de 32KB
       const jsonString = JSON.stringify(this.data, null, 2);
       const utf8Bytes = new TextEncoder().encode(jsonString);
+      const chunkSize = 32768;
       let binaryStr = "";
-      for (let i = 0; i < utf8Bytes.length; i++) {
-        binaryStr += String.fromCharCode(utf8Bytes[i]);
+      for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binaryStr += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
       }
       const contentBase64 = btoa(binaryStr);
 
@@ -1063,7 +1087,7 @@ const Store = {
         payload.sha = this.githubSha;
       }
 
-      const putRes = await fetch(putUrl, {
+      let putRes = await fetch(putUrl, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1072,6 +1096,28 @@ const Store = {
         },
         body: JSON.stringify(payload)
       });
+
+      // 3. Si ocurre conflicto 409, reintentar una vez con SHA fresco
+      if (!putRes.ok && putRes.status === 409) {
+        console.warn("Conflicto 409 en GitHub, reintentando con SHA fresco...");
+        const retryShaRes = await fetch(`https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`, {
+          headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github.v3+json" },
+          cache: "no-store"
+        });
+        if (retryShaRes.ok) {
+          const retryShaData = await retryShaRes.json();
+          payload.sha = retryShaData.sha;
+          putRes = await fetch(putUrl, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+        }
+      }
 
       if (putRes.ok) {
         const putJson = await putRes.json();
@@ -1083,9 +1129,7 @@ const Store = {
         return { success: true, github: true };
       } else {
         const errJson = await putRes.json().catch(() => ({}));
-        if (putRes.status === 409) {
-          this.githubSha = null;
-        }
+        this.githubSha = null;
         return { success: false, error: errJson.message || `Error HTTP ${putRes.status}` };
       }
     } catch (e) {
