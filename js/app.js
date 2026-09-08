@@ -134,7 +134,8 @@ function checkUrlParams() {
   const auth = urlParams.get("auth") || urlParams.get("token");
   if (auth) {
     Store.setGitHubToken(auth);
-    showToast("✅ Dispositivo autorizado con permisos de sincronización Cloud", "success");
+    sessionStorage.setItem("cabina_admin_auth", "true");
+    showToast("✅ Dispositivo autorizado con sincronización Cloud y modo Administrador", "success");
     urlParams.delete("auth");
     urlParams.delete("token");
     const cleanSearch = urlParams.toString() ? `?${urlParams.toString()}` : "";
@@ -578,7 +579,10 @@ function renderSlotCard(slot, slotId) {
           </div>
           <div class="slot-empty-actions">
             <button class="btn btn-slot connect" onclick="openEditModal('${slotId}')">
-              ➕ Conectar Equipo
+              ➕ Conectar
+            </button>
+            <button class="btn btn-slot btn-traer" onclick="openMoverAquiModal('${slotId}')" title="Mover un equipo ya conectado a este hueco libre sin tener que reescribirlo">
+              📥 Traer
             </button>
             <button class="btn btn-slot btn-slot-hist-empty" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
               📜 Historial
@@ -633,6 +637,9 @@ function renderSlotCard(slot, slotId) {
           <div class="slot-actions-row primary">
             <button class="btn-slot" onclick="openEditModal('${slotId}')">
               ✏️ Editar
+            </button>
+            <button class="btn-slot btn-mover" onclick="openMoverModal('${slotId}')" title="Mover este equipo a otro hueco libre para no reescribir toda la ficha">
+              📦 Mover
             </button>
             <button class="btn-slot btn-fin-ensayo" onclick="confirmarFinalizarPrueba('${slotId}')" title="Concluir el ensayo actual: se archiva en histórico y se limpian fechas, manteniendo el equipo y foto en el puesto">
               🏁 Fin Ensayo
@@ -705,6 +712,13 @@ function openEditModal(slotId) {
   // Imagen
   currentTempImageData = slotData.imagen || "";
   updateImagePreview(currentTempImageData);
+
+  // Botón Mover en modal
+  const btnModalMover = document.getElementById("btn-modal-mover");
+  if (btnModalMover) {
+    const isOccupied = !Store.isSlotLibre(slotData);
+    btnModalMover.style.display = isOccupied ? "inline-flex" : "none";
+  }
 
   document.getElementById("edit-slot-modal").classList.add("active");
 }
@@ -885,8 +899,426 @@ function closeImageViewer() {
   }
 }
 
-/* Modal Conexión Móvil */
+/* Seguridad: PIN de Administrador (1923) para autorizar dispositivos y cambiar ajustes */
+const ADMIN_PIN = "1923";
+
+function isAdminLoggedIn() {
+  return sessionStorage.getItem("cabina_admin_auth") === "true";
+}
+
+let pendingAdminAction = null;
+
+function solicitarAdminPin(actionCallback) {
+  if (isAdminLoggedIn()) {
+    actionCallback();
+    return;
+  }
+  pendingAdminAction = actionCallback;
+  const pinModal = document.getElementById("admin-pin-modal");
+  const pinInput = document.getElementById("admin-pin-input");
+  const pinErr = document.getElementById("admin-pin-error");
+  if (pinInput) pinInput.value = "";
+  if (pinErr) pinErr.style.display = "none";
+  if (pinModal) pinModal.classList.add("active");
+  setTimeout(() => pinInput && pinInput.focus(), 150);
+}
+
+function closeAdminPinModal() {
+  const pinModal = document.getElementById("admin-pin-modal");
+  if (pinModal) pinModal.classList.remove("active");
+  pendingAdminAction = null;
+}
+
+function verificarAdminPin() {
+  const pinInput = document.getElementById("admin-pin-input");
+  const pinErr = document.getElementById("admin-pin-error");
+  const val = pinInput ? pinInput.value.trim() : "";
+  if (val === ADMIN_PIN) {
+    sessionStorage.setItem("cabina_admin_auth", "true");
+    closeAdminPinModal();
+    showToast("🔓 Modo Administrador activado", "success");
+    if (typeof pendingAdminAction === "function") {
+      const fn = pendingAdminAction;
+      pendingAdminAction = null;
+      fn();
+    }
+  } else {
+    if (pinErr) pinErr.style.display = "block";
+    if (pinInput) {
+      pinInput.value = "";
+      pinInput.focus();
+    }
+    showToast("❌ PIN incorrecto. Solo el administrador puede autorizar dispositivos.", "warning");
+  }
+}
+
+/* ==================== MÓDULO: MOVER EQUIPO A HUECO LIBRE ==================== */
+let moverMode = "mover"; // "mover" (origen -> destino libre) o "traer" (destino libre <- origen ocupado)
+let moverFromSlotId = null;
+let moverToSlotId = null;
+let moverZonaFilter = "todos";
+
+function moverDesdeModal() {
+  if (!currentEditSlotId) return;
+  const slotId = currentEditSlotId;
+  closeEditModal();
+  openMoverModal(slotId);
+}
+
+function openMoverModal(slotId) {
+  moverMode = "mover";
+  moverFromSlotId = slotId;
+  moverToSlotId = null;
+  moverZonaFilter = "todos";
+
+  const sourceSlot = (Store.data.slots && Store.data.slots[slotId]) || {};
+  const parsed = Store._parseSlotId(slotId, sourceSlot);
+  const eqName = (sourceSlot.equipo && sourceSlot.equipo.trim()) || (sourceSlot.iot && sourceSlot.iot.trim()) || `Equipo en ${slotId}`;
+
+  document.getElementById("mover-modal-title").textContent = `Mover ${eqName} a Hueco Libre`;
+  document.getElementById("mover-modal-subtitle").textContent = `Trasladar el equipo desde ${slotId} (${parsed.puesto_nombre}) a otro hueco libre sin reescribir datos`;
+  document.getElementById("mover-target-label").textContent = "🎯 SELECCIONA EL HUECO LIBRE DE DESTINO:";
+
+  // Renderizar banner origen
+  const banner = document.getElementById("mover-origin-banner");
+  banner.innerHTML = `
+    <div style="display: flex; gap: 0.9rem; align-items: center;">
+      ${sourceSlot.imagen ? `
+        <div style="width: 58px; height: 58px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0;">
+          <img src="${sourceSlot.imagen}" alt="${escapeHtml(eqName)}" style="width: 100%; height: 100%; object-fit: cover;" />
+        </div>
+      ` : `
+        <div style="width: 58px; height: 58px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+          📦
+        </div>
+      `}
+      <div style="flex: 1; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+          <span class="slot-badge-num" style="background: rgba(139, 92, 246, 0.25); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);">${slotId}</span>
+          <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">${escapeHtml(eqName)}</span>
+          ${sourceSlot.datalogger ? `<span class="meta-chip datalogger" style="font-size: 0.65rem;">📊 Datalogger</span>` : ''}
+        </div>
+        <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 0.2rem;">
+          📍 <strong>Ubicación actual:</strong> ${parsed.planta_icono} ${parsed.planta_nombre} · ${parsed.puesto_nombre}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.25rem;">
+          ${sourceSlot.modelo ? `<span>Mod: ${escapeHtml(sourceSlot.modelo)}</span>` : ''}
+          ${sourceSlot.sw ? `<span>SW: ${escapeHtml(sourceSlot.sw)}</span>` : ''}
+          ${sourceSlot.iot ? `<span>IoT: ${escapeHtml(sourceSlot.iot)}</span>` : ''}
+          ${sourceSlot.responsable ? `<span>👤 ${escapeHtml(sourceSlot.responsable)}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderMoverZonaFilters();
+  renderMoverSlotsGrid();
+  updateMoverPreview();
+
+  const searchInput = document.getElementById("mover-search-input");
+  if (searchInput) searchInput.value = "";
+
+  document.getElementById("mover-slot-modal").classList.add("active");
+}
+
+function openMoverAquiModal(toSlotId) {
+  moverMode = "traer";
+  moverToSlotId = toSlotId;
+  moverFromSlotId = null;
+  moverZonaFilter = "todos";
+
+  const targetParsed = Store._parseSlotId(toSlotId, {});
+
+  document.getElementById("mover-modal-title").textContent = `Traer Equipo a ${toSlotId} (${targetParsed.puesto_nombre})`;
+  document.getElementById("mover-modal-subtitle").textContent = `Mueve un equipo actualmente conectado a este hueco libre sin tener que reescribir nada`;
+  document.getElementById("mover-target-label").textContent = "📦 SELECCIONA QUÉ EQUIPO DESEAS MOVER A ESTE HUECO:";
+
+  const banner = document.getElementById("mover-origin-banner");
+  banner.innerHTML = `
+    <div style="display: flex; gap: 0.8rem; align-items: center;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #34d399; flex-shrink: 0;">
+        📥
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span class="slot-badge-num" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">${toSlotId}</span>
+          <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">Hueco Destino Libre</span>
+        </div>
+        <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 0.15rem;">
+          ${targetParsed.planta_icono} ${targetParsed.planta_nombre} · ${targetParsed.puesto_nombre}
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderMoverZonaFilters();
+  renderMoverSlotsGrid();
+  updateMoverPreview();
+
+  const searchInput = document.getElementById("mover-search-input");
+  if (searchInput) searchInput.value = "";
+
+  document.getElementById("mover-slot-modal").classList.add("active");
+}
+
+function closeMoverModal() {
+  const modal = document.getElementById("mover-slot-modal");
+  if (modal) modal.classList.remove("active");
+  moverFromSlotId = null;
+  moverToSlotId = null;
+}
+
+function renderMoverZonaFilters() {
+  const container = document.getElementById("mover-zona-filters");
+  if (!container) return;
+  const plantas = Store.getPlantas();
+
+  let html = `
+    <button type="button" class="mover-filter-pill ${moverZonaFilter === 'todos' ? 'active' : ''}" onclick="setMoverZonaFilter('todos')">
+      🏢 Todas
+    </button>
+  `;
+
+  plantas.forEach(pl => {
+    html += `
+      <button type="button" class="mover-filter-pill ${moverZonaFilter === pl.id ? 'active' : ''}" onclick="setMoverZonaFilter('${pl.id}')">
+        ${pl.icono} ${pl.nombre.split(':')[0]}
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function setMoverZonaFilter(zonaId) {
+  moverZonaFilter = zonaId;
+  renderMoverZonaFilters();
+  renderMoverSlotsGrid();
+}
+
+function renderMoverSlotsGrid() {
+  const container = document.getElementById("mover-slots-grid-container");
+  const countBadge = document.getElementById("mover-free-count-badge");
+  const searchInput = document.getElementById("mover-search-input");
+  const q = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+  if (moverMode === "mover") {
+    // Muestra huecos libres
+    const allFree = Store.getFreeSlots(moverFromSlotId);
+    let filtered = allFree;
+
+    if (moverZonaFilter !== "todos") {
+      filtered = filtered.filter(s => s.planta_id === moverZonaFilter);
+    }
+
+    if (q) {
+      filtered = filtered.filter(s =>
+        s.slot_id.toLowerCase().includes(q) ||
+        s.puesto_nombre.toLowerCase().includes(q) ||
+        s.planta_nombre.toLowerCase().includes(q)
+      );
+    }
+
+    if (countBadge) {
+      countBadge.textContent = `${allFree.length} hueco${allFree.length === 1 ? '' : 's'} libre${allFree.length === 1 ? '' : 's'}`;
+    }
+
+    if (allFree.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 1.5rem; text-align: center; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px dashed rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); grid-column: 1 / -1;">
+          ⚠️ No hay huecos libres disponibles en ninguna de las zonas de la instalación. Debes liberar o desconectar un equipo antes de poder realizar un traslado.
+        </div>
+      `;
+      return;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 1rem; text-align: center; color: var(--text-dim); grid-column: 1 / -1;">
+          No se encontraron huecos libres con el filtro actual.
+        </div>
+      `;
+      return;
+    }
+
+    let html = "";
+    filtered.forEach(item => {
+      const isSelected = moverToSlotId === item.slot_id;
+      html += `
+        <div class="mover-slot-card ${isSelected ? 'selected' : ''}" onclick="selectMoverTargetSlot('${item.slot_id}')">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span class="slot-badge-num" style="font-size: 0.75rem;">${item.slot_id}</span>
+            <span style="font-size: 0.68rem; font-weight: 700; color: #34d399;">🟢 Libre</span>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 600; color: #fff;">${escapeHtml(item.puesto_nombre)}</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${item.planta_icono} ${escapeHtml(item.planta_nombre)}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+
+  } else {
+    // Muestra equipos ocupados para traer a moverToSlotId
+    const allOccupied = Store.getOccupiedSlots(moverToSlotId);
+    let filtered = allOccupied;
+
+    if (moverZonaFilter !== "todos") {
+      filtered = filtered.filter(s => s.planta_id === moverZonaFilter);
+    }
+
+    if (q) {
+      filtered = filtered.filter(s => {
+        const d = s.data || {};
+        return s.slot_id.toLowerCase().includes(q) ||
+          s.puesto_nombre.toLowerCase().includes(q) ||
+          s.planta_nombre.toLowerCase().includes(q) ||
+          (d.equipo && d.equipo.toLowerCase().includes(q)) ||
+          (d.modelo && d.modelo.toLowerCase().includes(q)) ||
+          (d.iot && d.iot.toLowerCase().includes(q)) ||
+          (d.responsable && d.responsable.toLowerCase().includes(q));
+      });
+    }
+
+    if (countBadge) {
+      countBadge.textContent = `${allOccupied.length} equipo${allOccupied.length === 1 ? '' : 's'} en prueba`;
+    }
+
+    if (allOccupied.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 1.5rem; text-align: center; color: var(--text-dim); grid-column: 1 / -1;">
+          No hay ningún equipo conectado actualmente para mover.
+        </div>
+      `;
+      return;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 1rem; text-align: center; color: var(--text-dim); grid-column: 1 / -1;">
+          No se encontraron equipos con el filtro actual.
+        </div>
+      `;
+      return;
+    }
+
+    let html = "";
+    filtered.forEach(item => {
+      const isSelected = moverFromSlotId === item.slot_id;
+      const d = item.data || {};
+      const eqTitle = d.equipo || d.iot || item.slot_id;
+      html += `
+        <div class="mover-slot-card ${isSelected ? 'selected' : ''}" onclick="selectMoverTargetSlot('${item.slot_id}')">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span class="slot-badge-num" style="font-size: 0.75rem;">${item.slot_id}</span>
+            <span style="font-size: 0.68rem; font-weight: 700; color: #c084fc;">🟡 Ocupado</span>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${escapeHtml(eqTitle)}
+          </div>
+          <div style="font-size: 0.7rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${item.planta_icono} ${escapeHtml(item.puesto_nombre)} ${d.responsable ? `· 👤 ${escapeHtml(d.responsable)}` : ''}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+}
+
+function filterMoverSlotsGrid() {
+  renderMoverSlotsGrid();
+}
+
+function selectMoverTargetSlot(slotId) {
+  if (moverMode === "mover") {
+    moverToSlotId = slotId;
+  } else {
+    moverFromSlotId = slotId;
+  }
+  renderMoverSlotsGrid();
+  updateMoverPreview();
+}
+
+function updateMoverPreview() {
+  const previewBox = document.getElementById("mover-preview-box");
+  const btnConfirm = document.getElementById("btn-confirmar-mover");
+
+  if (!moverFromSlotId || !moverToSlotId) {
+    if (previewBox) previewBox.style.display = "none";
+    if (btnConfirm) btnConfirm.disabled = true;
+    return;
+  }
+
+  const fromSlot = (Store.data.slots && Store.data.slots[moverFromSlotId]) || {};
+  const fromParsed = Store._parseSlotId(moverFromSlotId, fromSlot);
+  const toSlot = (Store.data.slots && Store.data.slots[moverToSlotId]) || {};
+  const toParsed = Store._parseSlotId(moverToSlotId, toSlot);
+  const eqName = (fromSlot.equipo && fromSlot.equipo.trim()) || (fromSlot.iot && fromSlot.iot.trim()) || "Equipo";
+
+  if (previewBox) {
+    previewBox.style.display = "block";
+    previewBox.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.6rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="slot-badge-num" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4);">${moverFromSlotId}</span>
+          <span style="font-size: 0.8rem; color: var(--text-dim);">${fromParsed.puesto_nombre}</span>
+        </div>
+        <span style="font-size: 1.1rem; color: #a78bfa;">➔</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="slot-badge-num" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">${moverToSlotId}</span>
+          <span style="font-size: 0.8rem; color: #34d399; font-weight: 600;">${toParsed.puesto_nombre}</span>
+        </div>
+      </div>
+      <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
+        ✓ <strong>${escapeHtml(eqName)}</strong> se trasladará íntegramente a <strong>${moverToSlotId}</strong> (conservando foto, modelo, SW, IoT, datalogger, responsable y notas).<br>
+        ✓ El hueco <strong>${moverFromSlotId}</strong> quedará limpio y libre.<br>
+        ✓ Se registrará apunte en el histórico para trazabilidad y auditoría.
+      </div>
+    `;
+  }
+
+  if (btnConfirm) btnConfirm.disabled = false;
+}
+
+async function ejecutarMoverEquipo() {
+  if (!moverFromSlotId || !moverToSlotId) return;
+
+  const fromSlot = (Store.data.slots && Store.data.slots[moverFromSlotId]) || {};
+  const eqName = fromSlot.equipo || fromSlot.iot || "Equipo";
+  const btn = document.getElementById("btn-confirmar-mover");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Moviendo equipo...";
+  }
+
+  try {
+    const syncResult = await Store.moverEquipo(moverFromSlotId, moverToSlotId);
+    closeMoverModal();
+    if (syncResult && syncResult.github) {
+      showToast(`✅ ${eqName} trasladado a ${moverToSlotId} y sincronizado en GitHub`, "success");
+    } else {
+      showToast(`✅ ${eqName} trasladado al hueco ${moverToSlotId} con éxito`, "success");
+    }
+  } catch (err) {
+    console.error("Error al mover equipo:", err);
+    showToast(`❌ Error al mover equipo: ${err.message}`, "danger");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "📦 Confirmar y Mover Equipo";
+    }
+  }
+}
+
+/* Modal Conexión Móvil (Protegido por PIN de Administrador) */
 function openMobileConnectModal() {
+  solicitarAdminPin(() => {
+    ejecutarOpenMobileConnectModal();
+  });
+}
+
+function ejecutarOpenMobileConnectModal() {
   const modal = document.getElementById("mobile-connect-modal");
   if (!modal) return;
 
@@ -1055,8 +1487,14 @@ function openEditZonasModal() {
   openEditPuestosModal();
 }
 
-/* Modal Ajustes y Sincronización */
+/* Modal Ajustes y Sincronización (Protegido por PIN de Administrador) */
 function openSyncModal() {
+  solicitarAdminPin(() => {
+    ejecutarOpenSyncModal();
+  });
+}
+
+function ejecutarOpenSyncModal() {
   document.getElementById("sync-modal").classList.add("active");
   const tokenInput = document.getElementById("github-token-input");
   const urlInput = document.getElementById("qr-base-url-input");
@@ -1068,6 +1506,45 @@ function openSyncModal() {
 
 function closeSyncModal() {
   document.getElementById("sync-modal").classList.remove("active");
+  const tokenInput = document.getElementById("github-token-input");
+  if (tokenInput) tokenInput.type = "password";
+  const eye = document.getElementById("btn-toggle-token-eye");
+  if (eye) eye.textContent = "👁️";
+}
+
+function toggleTokenVisibility() {
+  const input = document.getElementById("github-token-input");
+  const eye = document.getElementById("btn-toggle-token-eye");
+  if (!input) return;
+  if (input.type === "password") {
+    input.type = "text";
+    if (eye) eye.textContent = "🙈";
+  } else {
+    input.type = "password";
+    if (eye) eye.textContent = "👁️";
+  }
+}
+
+function copiarMiEnlaceDirecto() {
+  const token = Store.githubConfig.token || (document.getElementById("github-token-input") ? document.getElementById("github-token-input").value.trim() : "");
+  if (!token) {
+    showToast("⚠️ No hay token guardado para generar el enlace.", "warning");
+    return;
+  }
+  let baseUrl = QRGenerator.getBaseUrl() || window.location.href.split("#")[0].split("?")[0];
+  if (baseUrl.endsWith("index.html")) baseUrl = baseUrl.replace("index.html", "");
+  if (!baseUrl.endsWith("/")) baseUrl += "/";
+  const enlace = `${baseUrl}?auth=${encodeURIComponent(token)}`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(enlace).then(() => {
+      showToast("📋 ¡Enlace copiado al portapapeles! Pégalo en tu WhatsApp o Notas", "success");
+    }).catch(() => {
+      prompt("Copia tu enlace de acceso directo:", enlace);
+    });
+  } else {
+    prompt("Copia tu enlace de acceso directo:", enlace);
+  }
 }
 
 function updateGitHubStatusUI() {
