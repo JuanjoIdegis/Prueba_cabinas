@@ -163,7 +163,7 @@ const Store = {
   async updatePuestosConfig(updatedPlantas) {
     this.data.plantas = updatedPlantas;
     this.data.puestos = [].concat(...updatedPlantas.map(pl => pl.puestos.map(p => p.id)));
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
     return await this.saveToGitHub("Actualizar nombres de zonas y puestos");
   },
@@ -172,7 +172,7 @@ const Store = {
     const pl = (this.data.plantas || []).find(z => z.id === zonaId);
     if (pl) {
       pl.nombre = nuevoNombre;
-      localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+      this._saveLocalCache();
       this.notify();
       return await this.saveToGitHub(`Renombrar ${zonaId} a ${nuevoNombre}`);
     }
@@ -183,7 +183,7 @@ const Store = {
       const p = pl.puestos.find(item => item.id === puestoId);
       if (p) {
         p.nombre = nuevoNombre;
-        localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+        this._saveLocalCache();
         this.notify();
         return await this.saveToGitHub(`Renombrar puesto ${puestoId} a ${nuevoNombre}`);
       }
@@ -216,6 +216,41 @@ const Store = {
 
   notify() {
     this.listeners.forEach(fn => fn(this.data));
+  },
+
+  _saveLocalCache() {
+    try {
+      this._saveLocalCache();
+    } catch (e) {
+      console.warn("localStorage quota excedida (demasiadas fotos), guardando versión ligera en caché local:", e);
+      try {
+        const lightData = {
+          version: this.data.version || "2.0.0",
+          plantas: this.data.plantas,
+          puestos: this.data.puestos,
+          slots: {},
+          historico: []
+        };
+        if (this.data.slots) {
+          Object.keys(this.data.slots).forEach(sId => {
+            const s = this.data.slots[sId];
+            lightData.slots[sId] = {
+              ...s,
+              imagen: (s.imagen && s.imagen.length > 300) ? "" : s.imagen
+            };
+          });
+        }
+        if (this.data.historico) {
+          lightData.historico = this.data.historico.slice(0, 20).map(h => ({
+            ...h,
+            imagen: ""
+          }));
+        }
+        localStorage.setItem("cabina_equipos_db", JSON.stringify(lightData));
+      } catch (err) {
+        console.warn("Aviso: No se pudo escribir en localStorage:", err);
+      }
+    }
   },
 
   async init() {
@@ -261,7 +296,7 @@ const Store = {
               }
             });
           });
-          localStorage.setItem("cabina_equipos_db", JSON.stringify(parsed));
+          this._saveLocalCache();
         }
 
         this.data = parsed;
@@ -433,7 +468,7 @@ const Store = {
     }
 
     if (hasChanges) {
-      localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+      this._saveLocalCache();
       this.notify();
     }
   },
@@ -506,7 +541,7 @@ const Store = {
       updated_at: new Date().toISOString()
     };
 
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
 
     // Guardar en GitHub
@@ -567,7 +602,7 @@ const Store = {
       updated_at: new Date().toISOString()
     };
 
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
 
     return await this.saveToGitHub(`Finalizar ensayo en ${slotId} (${prev.equipo || 'Equipo'})`);
@@ -633,7 +668,7 @@ const Store = {
       updated_at: new Date().toISOString()
     };
 
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
 
     const syncResult = await this.saveToGitHub(`Archivar e histórico ${slotId} (${prev.equipo || 'Libre'})`);
@@ -717,7 +752,7 @@ const Store = {
       fecha_registro: new Date().toISOString()
     });
 
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
 
     const nombreEq = source.equipo || source.iot || "Equipo";
@@ -747,7 +782,7 @@ const Store = {
     this.data.slots[slotId].datalogger = !!isConnected;
     this.data.slots[slotId].updated_at = new Date().toISOString();
 
-    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this._saveLocalCache();
     this.notify();
     return await this.saveToGitHub(`Datalogger ${isConnected ? 'conectado' : 'desconectado'} en ${slotId}`);
   },
