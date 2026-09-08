@@ -468,6 +468,55 @@ const Store = {
     return syncResult;
   },
 
+  async finalizarPruebaSlot(slotId, motivo = "Ensayo finalizado (Equipo permanece en puesto)") {
+    if (!this.data.slots || !this.data.slots[slotId]) return;
+
+    const prev = this.data.slots[slotId];
+    const parsed = this._parseSlotId(slotId, prev);
+
+    // Archivar ensayo actual en histórico con su fecha fin
+    if (!this.data.historico) this.data.historico = [];
+    this.data.historico.unshift({
+      id: "hist_" + Date.now(),
+      slot_id: slotId,
+      puesto: parsed.puesto,
+      puesto_nombre: parsed.puesto_nombre,
+      planta_id: parsed.planta_id,
+      planta_nombre: parsed.planta_nombre,
+      slot: parsed.slot,
+      equipo: (prev.equipo && prev.equipo.trim()) || (prev.iot ? `Equipo ${prev.iot}` : `Equipo ${slotId}`),
+      modelo: prev.modelo || "",
+      sw: prev.sw || "",
+      validacion: prev.validacion || "",
+      iot: prev.iot || "",
+      datalogger: !!prev.datalogger,
+      prueba: prev.prueba || "Ensayo",
+      responsable: prev.responsable || "No especificado",
+      f_inicio: prev.f_inicio || "",
+      f_final: prev.f_final || new Date().toISOString().slice(0, 10),
+      descripcion: prev.descripcion || "",
+      imagen: prev.imagen || "",
+      motivo_cierre: motivo,
+      fecha_registro: new Date().toISOString()
+    });
+
+    // MANTENER intactos: equipo, modelo, sw, validacion, iot, imagen y descripcion física.
+    // Solo se resetean las fechas y el campo prueba para dejar el puesto listo para la siguiente prueba.
+    this.data.slots[slotId] = {
+      ...prev,
+      estado: "en_uso_disponible",
+      prueba: "",
+      f_inicio: "",
+      f_final: "",
+      updated_at: new Date().toISOString()
+    };
+
+    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this.notify();
+
+    return await this.saveToGitHub(`Finalizar ensayo en ${slotId} (${prev.equipo || 'Equipo'})`);
+  },
+
   async liberarSlot(slotId, motivo = "Ensayo finalizado / Liberado") {
     if (!this.data.slots || !this.data.slots[slotId]) return;
 
