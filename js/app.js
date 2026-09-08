@@ -876,6 +876,8 @@ async function confirmarLiberar(slotId) {
   const nombreEquipo = slot.equipo || (slot.iot ? `Equipo ${slot.iot}` : slotId);
   if (confirm(`¿RETIRAR y dejar totalmente VACÍO el puesto ${slotId} (${nombreEquipo})?\n\n• El equipo y fotos se archivarán en el Histórico.\n• El puesto quedará LIBRE para conectar otro equipo nuevo desde cero.`)) {
     const syncResult = await Store.liberarSlot(slotId);
+    renderPuestos();
+    updateMetrics();
     if (syncResult && syncResult.github) {
       showToast(`✅ ${slotId} retirado y archivado en GitHub (Puesto Libre)`, "warning");
     } else {
