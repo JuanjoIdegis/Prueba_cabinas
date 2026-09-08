@@ -37,7 +37,66 @@ function reloadApp() {
   }, 200);
 }
 
+async function forceAppCacheRefresh() {
+  const brandIcon = document.querySelector(".brand-icon");
+  if (brandIcon) brandIcon.style.transform = "rotate(720deg)";
+  showToast("🔄 Vaciando caché y cargando la última versión...", "info");
+
+  try {
+    // 1. Desregistrar todos los service workers activos
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+
+    // 2. Borrar cachés locales del navegador
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const k of keys) {
+        await caches.delete(k);
+      }
+    }
+  } catch (err) {
+    console.warn("Error al limpiar cachés:", err);
+  }
+
+  // 3. Forzar recarga con parámetro único anticaché
+  setTimeout(() => {
+    const origin = window.location.origin;
+    const path = window.location.pathname;
+    window.location.href = `${origin}${path}?_build_refresh=${Date.now()}`;
+  }, 400);
+}
+
+async function checkForNewBuildUpdate() {
+  try {
+    const res = await fetch(`version.json?_t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const remote = await res.json();
+    const currentBadge = document.getElementById("app-build-badge");
+    const currentBuild = currentBadge ? currentBadge.dataset.build : null;
+
+    if (currentBuild && remote.build && currentBuild !== remote.build) {
+      showToast(`✨ Hay una nueva versión (${remote.display || remote.build}). Pulsa en el número de compilación para actualizarla.`, "warning");
+      if (currentBadge) {
+        currentBadge.style.background = "rgba(245, 158, 11, 0.25)";
+        currentBadge.style.borderColor = "#f59e0b";
+        currentBadge.style.color = "#fbbf24";
+        currentBadge.innerHTML = `⚠️ Actualizar a ${remote.display || remote.version}`;
+      }
+    }
+  } catch (e) {
+    // Silencioso si no hay conexión
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  // Comprobar si hay nueva compilación en el servidor
+  checkForNewBuildUpdate();
+  setInterval(checkForNewBuildUpdate, 60000);
+
   // Inicializar store de datos
   await Store.init();
 
