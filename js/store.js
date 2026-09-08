@@ -696,37 +696,43 @@ const Store = {
     // Equipos en bahías activas
     if (this.data.slots) {
       Object.entries(this.data.slots).forEach(([slotId, s]) => {
-        if (s && s.equipo && s.equipo.trim() && s.estado !== "libre") {
-          const key = s.equipo.trim();
-          if (!map.has(key)) {
-            const parsed = this._parseSlotId(slotId, s);
-            map.set(key, {
-              nombre: key,
-              modelo: s.modelo || "",
-              is_connected: true,
-              slot_id: slotId,
-              planta_nombre: parsed.planta_nombre,
-              puesto_nombre: parsed.puesto_nombre
-            });
-          }
+        if (!s || (s.estado === "libre" && !s.equipo && !s.iot)) return;
+        const iot = (s.iot && s.iot.trim()) || "";
+        const equipo = (s.equipo && s.equipo.trim()) || "";
+        const key = iot || equipo;
+        if (key && !map.has(key)) {
+          const parsed = this._parseSlotId(slotId, s);
+          map.set(key, {
+            nombre: key,
+            iot: iot,
+            equipo: equipo,
+            modelo: s.modelo || "",
+            is_connected: s.estado !== "libre",
+            slot_id: slotId,
+            planta_nombre: parsed.planta_nombre,
+            puesto_nombre: parsed.puesto_nombre
+          });
         }
       });
     }
     // Equipos en histórico
     if (this.data.historico && Array.isArray(this.data.historico)) {
       this.data.historico.forEach(h => {
-        if (h && h.equipo && h.equipo.trim()) {
-          const key = h.equipo.trim();
-          if (!map.has(key)) {
-            map.set(key, {
-              nombre: key,
-              modelo: h.modelo || "",
-              is_connected: false,
-              slot_id: h.slot_id,
-              planta_nombre: h.planta_nombre || "Cabina",
-              puesto_nombre: h.puesto_nombre || `Puesto ${h.puesto}`
-            });
-          }
+        if (!h) return;
+        const iot = (h.iot && h.iot.trim()) || "";
+        const equipo = (h.equipo && h.equipo.trim()) || "";
+        const key = iot || equipo;
+        if (key && !map.has(key)) {
+          map.set(key, {
+            nombre: key,
+            iot: iot,
+            equipo: equipo,
+            modelo: h.modelo || "",
+            is_connected: false,
+            slot_id: h.slot_id,
+            planta_nombre: h.planta_nombre || "Cabina",
+            puesto_nombre: h.puesto_nombre || `Puesto ${h.puesto}`
+          });
         }
       });
     }
