@@ -119,6 +119,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Escuchar actualizaciones del store
   Store.subscribe(() => {
     renderApp();
+    const histModal = document.getElementById("historico-modal");
+    if (histModal && histModal.classList.contains("active")) {
+      renderHistorico();
+    }
   });
 
   // Render inicial
@@ -2342,9 +2346,13 @@ function solicitarEliminarRegistroHistorico(histId) {
     const nombre = item ? `${item.equipo || 'Equipo'} (${item.slot_id})` : 'este registro';
 
     if (confirm(`¿Estás seguro de que deseas eliminar permanentemente del histórico el ensayo de:\n\n"${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
-      await Store.eliminarItemHistorico(histId);
+      const res = await Store.eliminarItemHistorico(histId);
       renderHistorico();
-      showToast("🗑️ Registro eliminado del histórico correctamente", "success");
+      if (res && res.error) {
+        showToast(`⚠️ Eliminado en local. Aviso nube: ${res.error}`, "warning");
+      } else {
+        showToast("🗑️ Registro eliminado del histórico correctamente", "success");
+      }
     }
   });
 }
@@ -2358,9 +2366,13 @@ function solicitarVaciarTodoHistorico() {
     }
 
     if (confirm(`⚠️ MODO ADMINISTRADOR:\n\nVas a eliminar permanentemente TODOS los ${total} registros del histórico.\n\n¿Estás completamente seguro de que deseas vaciar el historial? Esta acción no se puede deshacer.`)) {
-      await Store.vaciarHistorico();
+      const res = await Store.vaciarHistorico();
       renderHistorico();
-      showToast(`🗑️ Histórico vaciado por completo (${total} registros eliminados)`, "success");
+      if (res && res.error) {
+        showToast(`⚠️ Vaciado en local. Aviso nube: ${res.error}`, "warning");
+      } else {
+        showToast(`🗑️ Histórico vaciado por completo (${total} registros eliminados)`, "success");
+      }
     }
   });
 }
