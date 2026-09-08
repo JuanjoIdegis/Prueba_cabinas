@@ -207,10 +207,12 @@ function renderMetrics() {
     for (let s = 1; s <= count; s++) {
       const slotId = (pId.length === 1) ? `${pId}${s}` : `${pId}_${s}`;
       const slot = slots[slotId] || { estado: "libre" };
+      const hasAnyData = !!(slot.equipo && slot.equipo.trim()) || !!(slot.modelo && slot.modelo.trim()) || !!(slot.iot && slot.iot.trim()) || !!slot.imagen;
+      const isActuallyLibre = (slot.estado === "libre" || !slot.estado) && !hasAnyData;
 
-      if (slot.estado === "libre" || !slot.estado) libres++;
-      else if (slot.estado === "en_uso_disponible") disponibles++;
+      if (isActuallyLibre) libres++;
       else if (slot.estado === "no_tocar") noTocar++;
+      else disponibles++;
 
       if (slot.datalogger) dataloggers++;
     }
@@ -389,16 +391,18 @@ function renderPuestoCard(puestoId) {
     const slotId = pInfo.id.length > 2 || pInfo.id.includes('_') ? `${pInfo.id}_${slotNum}` : `${pInfo.id}${slotNum}`;
     const slotData = slots[slotId] || { puesto: pInfo.id, slot: slotNum, estado: "libre" };
     const estado = slotData.estado || "libre";
+    const hasAnyData = !!(slotData.equipo && slotData.equipo.trim()) || !!(slotData.modelo && slotData.modelo.trim()) || !!(slotData.iot && slotData.iot.trim()) || !!slotData.imagen || !!(slotData.descripcion && slotData.descripcion.trim());
+    const isActuallyLibre = (estado === "libre") && !hasAnyData;
 
-    if (estado === "libre") libresCount++;
-    else if (estado === "en_uso_disponible") enUsoCount++;
+    if (isActuallyLibre) libresCount++;
     else if (estado === "no_tocar") noTocarCount++;
+    else enUsoCount++;
 
     baySummaries.push({
       slotId,
       slotNum,
-      estado,
-      equipo: slotData.equipo || "",
+      estado: isActuallyLibre ? "libre" : (estado === "no_tocar" ? "no_tocar" : "en_uso_disponible"),
+      equipo: slotData.equipo || (slotData.iot ? `IoT: ${slotData.iot}` : (slotData.imagen ? 'Con Foto' : '')),
       modelo: slotData.modelo || "",
       datalogger: !!slotData.datalogger
     });
@@ -427,6 +431,10 @@ function renderPuestoCard(puestoId) {
 
   // Determinar si este puesto debe estar recogido
   let isCollapsed = areAllCollapsed;
+  // Si el puesto tiene equipos conectados, mantenerlo DESPLEGADO por defecto para visibilidad directa
+  if (slotsCount - libresCount > 0) {
+    isCollapsed = false;
+  }
   if (explicitlyExpandedPuestos.has(pInfo.id)) isCollapsed = false;
   else if (explicitlyCollapsedPuestos.has(pInfo.id)) isCollapsed = true;
 
@@ -526,15 +534,22 @@ function toggleAllCardsCollapse() {
 }
 
 function renderSlotCard(slot, slotId) {
-  const estado = slot.estado || "libre";
-  const isLibre = estado === "libre";
-  const hasEquipment = !!slot.equipo;
+  const hasEquipment = !!(slot.equipo && slot.equipo.trim());
+  const hasAnyData = hasEquipment || !!(slot.modelo && slot.modelo.trim()) || !!(slot.sw && slot.sw.trim()) || !!(slot.iot && slot.iot.trim()) || !!(slot.prueba && slot.prueba.trim()) || !!(slot.responsable && slot.responsable.trim()) || !!(slot.descripcion && slot.descripcion.trim()) || !!slot.imagen;
+
+  let estado = slot.estado || "libre";
+  if (estado === "libre" && hasAnyData) {
+    estado = "en_uso_disponible";
+  }
+  const isLibre = (estado === "libre") && !hasAnyData;
 
   const statusLabel = {
     "libre": "🟢 Libre",
     "en_uso_disponible": "🟡 En uso (Disponible)",
     "no_tocar": "🔴 No Tocar"
   }[estado] || "🟢 Libre";
+
+  const displayTitle = slot.equipo || (slot.iot ? `Equipo ${slot.iot}` : (hasAnyData ? `Equipo ${slotId}` : 'Sin identificador'));
 
   return `
     <div class="slot-card state-${estado}" id="card-slot-${slotId}">
@@ -549,7 +564,7 @@ function renderSlotCard(slot, slotId) {
         <span class="slot-status-pill ${estado}">${statusLabel}</span>
       </div>
 
-      ${isLibre && !hasEquipment ? `
+      ${isLibre ? `
         <div class="slot-empty-view">
           <div class="slot-empty-icon" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo en ${slotId}">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -573,8 +588,8 @@ function renderSlotCard(slot, slotId) {
       ` : `
         <div class="slot-body">
           ${slot.imagen ? `
-            <div class="equipment-thumb has-image" onclick="openImageViewer('${slot.imagen}', '${escapeHtml(slot.equipo || slotId)}')" title="Ver foto ampliada">
-              <img src="${slot.imagen}" alt="${escapeHtml(slot.equipo || '')}" loading="lazy" />
+            <div class="equipment-thumb has-image" onclick="openImageViewer('${slot.imagen}', '${escapeHtml(displayTitle)}')" title="Ver foto ampliada">
+              <img src="${slot.imagen}" alt="${escapeHtml(displayTitle)}" loading="lazy" />
             </div>
           ` : `
             <div class="equipment-thumb" onclick="openEditModal('${slotId}')" title="Clic para conectar o añadir foto">
@@ -586,7 +601,7 @@ function renderSlotCard(slot, slotId) {
           `}
 
           <div class="equipment-info">
-            <div class="eq-title" title="${slot.equipo || ''}">${slot.equipo || 'Sin identificador'}</div>
+            <div class="eq-title" title="${escapeHtml(displayTitle)}">${escapeHtml(displayTitle)}</div>
             <div class="eq-model" title="${slot.modelo || ''}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><rect x="8" y="10" width="14" height="10" rx="2"/></svg>
               ${slot.modelo || 'Modelo no especificado'}
@@ -746,10 +761,29 @@ async function saveSlotForm() {
   }
 
   const equipo = document.getElementById("form-equipo").value.trim();
+  const modelo = document.getElementById("form-modelo").value.trim();
+  const sw = document.getElementById("form-sw").value.trim();
+  const validacion = document.getElementById("form-validacion").value.trim();
+  const iot = document.getElementById("form-iot").value.trim();
+  const datalogger = document.getElementById("form-datalogger") ? document.getElementById("form-datalogger").checked : false;
+  const prueba = document.getElementById("form-prueba").value.trim();
+  const responsable = document.getElementById("form-responsable").value.trim();
+  const f_inicio = document.getElementById("form-f-inicio").value;
+  const f_final = document.getElementById("form-f-final").value;
+  const descripcion = document.getElementById("form-descripcion").value.trim();
+  const imagen = currentTempImageData || "";
 
-  // Si se introduce equipo y el estado sigue siendo "libre", cambiar automáticamente a en_uso_disponible
-  if (equipo && estado === "libre") {
+  // Si se introduce cualquier dato y el estado sigue siendo "libre", cambiar automáticamente a en_uso_disponible
+  const hasAnyData = !!equipo || !!modelo || !!sw || !!validacion || !!iot || !!prueba || !!responsable || !!descripcion || !!imagen || datalogger;
+  if (hasAnyData && estado === "libre") {
     estado = "en_uso_disponible";
+  }
+
+  let finalEquipo = equipo;
+  if (!finalEquipo && hasAnyData) {
+    if (iot) finalEquipo = iot;
+    else if (modelo) finalEquipo = modelo;
+    else finalEquipo = `Equipo ${targetSlotId}`;
   }
 
   const slotData = {
@@ -757,18 +791,18 @@ async function saveSlotForm() {
     puesto,
     slot,
     estado,
-    equipo,
-    modelo: document.getElementById("form-modelo").value.trim(),
-    sw: document.getElementById("form-sw").value.trim(),
-    validacion: document.getElementById("form-validacion").value.trim(),
-    iot: document.getElementById("form-iot").value.trim(),
-    datalogger: document.getElementById("form-datalogger") ? document.getElementById("form-datalogger").checked : false,
-    prueba: document.getElementById("form-prueba").value.trim(),
-    responsable: document.getElementById("form-responsable").value.trim(),
-    f_inicio: document.getElementById("form-f-inicio").value,
-    f_final: document.getElementById("form-f-final").value,
-    descripcion: document.getElementById("form-descripcion").value.trim(),
-    imagen: currentTempImageData || ""
+    equipo: finalEquipo,
+    modelo,
+    sw,
+    validacion,
+    iot,
+    datalogger,
+    prueba,
+    responsable,
+    f_inicio,
+    f_final,
+    descripcion,
+    imagen
   };
 
   closeEditModal();
