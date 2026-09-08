@@ -76,16 +76,18 @@ async function checkForNewBuildUpdate() {
     if (!res.ok) return;
     const remote = await res.json();
     const currentBadge = document.getElementById("app-build-badge");
-    const currentBuild = currentBadge ? currentBadge.dataset.build : null;
+    if (!currentBadge) return;
+    const currentBuild = currentBadge.dataset.build;
 
-    if (currentBuild && remote.build && currentBuild !== remote.build) {
+    if (!currentBuild) {
+      currentBadge.dataset.build = remote.build;
+      currentBadge.textContent = remote.display || `v${remote.version} · ${remote.build}`;
+    } else if (remote.build && currentBuild !== remote.build) {
       showToast(`✨ Hay una nueva versión (${remote.display || remote.build}). Pulsa en el número de compilación para actualizarla.`, "warning");
-      if (currentBadge) {
-        currentBadge.style.background = "rgba(245, 158, 11, 0.25)";
-        currentBadge.style.borderColor = "#f59e0b";
-        currentBadge.style.color = "#fbbf24";
-        currentBadge.innerHTML = `⚠️ Actualizar a ${remote.display || remote.version}`;
-      }
+      currentBadge.style.background = "rgba(245, 158, 11, 0.25)";
+      currentBadge.style.borderColor = "#f59e0b";
+      currentBadge.style.color = "#fbbf24";
+      currentBadge.innerHTML = `⚠️ Actualizar a ${remote.display || remote.version}`;
     }
   } catch (e) {
     // Silencioso si no hay conexión
@@ -2261,7 +2263,7 @@ function renderHistorico() {
     ? `<h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.6rem; letter-spacing: 0.05em;">📜 Ensayos Anteriores Finalizados (${filtered.length})</h4>`
     : "";
 
-  container.innerHTML = activeSlotBannerHtml + archiveHeader + filtered.map(item => `
+  container.innerHTML = activeSlotBannerHtml + archiveHeader + filtered.map((item, idx) => `
     <div style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; display: flex; gap: 1rem; align-items: flex-start; transition: all 0.2s ease;">
       <!-- Thumbnail de Foto informativo -->
       <div style="width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; background: #0b0f19; flex-shrink: 0; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
@@ -2282,9 +2284,14 @@ function renderHistorico() {
             <strong style="font-size: 1rem; color: #fff;">${item.equipo || 'Sin nombre'}</strong>
             <span style="color: var(--text-dim); font-size: 0.85rem; margin-left: 0.4rem;">· ${item.modelo || 'Modelo N/D'}</span>
           </div>
-          <span style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">
-            Archivado: ${item.fecha_registro ? item.fecha_registro.slice(0, 10) : '--'}
-          </span>
+          <div style="display: flex; align-items: center; gap: 0.55rem;">
+            <span style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono);">
+              Archivado: ${item.fecha_registro ? item.fecha_registro.slice(0, 10) : '--'}
+            </span>
+            <button class="btn btn-secondary btn-sm" onclick="solicitarEliminarRegistroHistorico('${item.id || ('hist_idx_' + idx)}')" title="Eliminar este ensayo del histórico (Requiere PIN Administrador)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; color: #f87171; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;">
+              🗑️
+            </button>
+          </div>
         </div>
 
         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.45rem 0;">
@@ -2326,6 +2333,36 @@ function downloadHistoricoCSV() {
   link.click();
   link.remove();
   showToast("Descargando archivo CSV de histórico...", "success");
+}
+
+function solicitarEliminarRegistroHistorico(histId) {
+  solicitarAdminPin(async () => {
+    const hist = Store.data.historico || [];
+    const item = hist.find((h, idx) => (h.id === histId || `hist_idx_${idx}` === histId));
+    const nombre = item ? `${item.equipo || 'Equipo'} (${item.slot_id})` : 'este registro';
+
+    if (confirm(`¿Estás seguro de que deseas eliminar permanentemente del histórico el ensayo de:\n\n"${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+      await Store.eliminarItemHistorico(histId);
+      renderHistorico();
+      showToast("🗑️ Registro eliminado del histórico correctamente", "success");
+    }
+  });
+}
+
+function solicitarVaciarTodoHistorico() {
+  solicitarAdminPin(async () => {
+    const total = (Store.data.historico || []).length;
+    if (total === 0) {
+      showToast("El histórico ya está vacío.", "info");
+      return;
+    }
+
+    if (confirm(`⚠️ MODO ADMINISTRADOR:\n\nVas a eliminar permanentemente TODOS los ${total} registros del histórico.\n\n¿Estás completamente seguro de que deseas vaciar el historial? Esta acción no se puede deshacer.`)) {
+      await Store.vaciarHistorico();
+      renderHistorico();
+      showToast(`🗑️ Histórico vaciado por completo (${total} registros eliminados)`, "success");
+    }
+  });
 }
 
 function showToast(msg, type = "success") {
