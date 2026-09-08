@@ -833,7 +833,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T11:12:27.306Z"
+      "updated_at": "2026-09-08T11:15:00.000Z"
     },
     "J2": {
       "puesto": "J",
@@ -1332,6 +1332,17 @@
     }
   },
   "historico": [
+    {
+      "id": "hist_j1_retirado",
+      "slot_id": "J1",
+      "puesto": "J",
+      "puesto_nombre": "Puesto J",
+      "slot": 1,
+      "equipo": "Prueba",
+      "modelo": "",
+      "motivo_cierre": "Retirado por usuario",
+      "fecha_registro": "2026-09-08T11:15:00.000Z"
+    },
     {
       "id": "hist_1788865947305",
       "slot_id": "J1",
