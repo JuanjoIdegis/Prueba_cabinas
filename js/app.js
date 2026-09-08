@@ -110,6 +110,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Render inicial
   renderApp();
+  updateGitHubStatusUI();
   setupEventListeners();
 
   // Listener en la cabecera completa para recargar si no se pulsa un botón
@@ -777,7 +778,7 @@ async function saveSlotForm() {
   if (syncResult && syncResult.github) {
     showToast(`✅ ${targetSlotId} sincronizado en GitHub`, "success");
   } else if (syncResult && syncResult.localOnly) {
-    showToast(`💾 ${targetSlotId} guardado localmente`, "info");
+    showToast(`⚠️ ${targetSlotId} guardado SOLO en este móvil (Falta autorizar GitHub)`, "warning");
   } else {
     showToast(`✅ ${targetSlotId} actualizado`, "success");
   }
@@ -1000,16 +1001,41 @@ function closeSyncModal() {
 
 function updateGitHubStatusUI() {
   const badge = document.getElementById("github-status-badge");
-  if (!badge) return;
+  const headerBadge = document.getElementById("cloud-sync-status-badge");
+  const authBanner = document.getElementById("cloud-auth-banner");
 
-  if (Store.githubConfig.token) {
-    badge.textContent = "🟢 Conectado (Escritura activa)";
-    badge.style.background = "rgba(16, 185, 129, 0.2)";
-    badge.style.color = "#34d399";
-  } else {
-    badge.textContent = "🟡 Solo Lectura (Sin token)";
-    badge.style.background = "rgba(245, 158, 11, 0.2)";
-    badge.style.color = "#fbbf24";
+  const hasToken = !!(Store.githubConfig.token && Store.githubConfig.token.trim());
+
+  if (badge) {
+    if (hasToken) {
+      badge.textContent = "🟢 Conectado (Escritura activa)";
+      badge.style.background = "rgba(16, 185, 129, 0.2)";
+      badge.style.color = "#34d399";
+    } else {
+      badge.textContent = "🟡 Solo Lectura / Local (Sin token)";
+      badge.style.background = "rgba(245, 158, 11, 0.2)";
+      badge.style.color = "#fbbf24";
+    }
+  }
+
+  if (headerBadge) {
+    if (hasToken) {
+      headerBadge.innerHTML = "☁️ Cloud OK";
+      headerBadge.title = "Conectado a GitHub: sincronización en la nube activa";
+      headerBadge.style.background = "rgba(16, 185, 129, 0.25)";
+      headerBadge.style.color = "#34d399";
+      headerBadge.style.border = "1px solid rgba(16, 185, 129, 0.5)";
+    } else {
+      headerBadge.innerHTML = "⚠️ Solo Local";
+      headerBadge.title = "Dispositivo NO conectado a GitHub: pulsa aquí para autorizarlo";
+      headerBadge.style.background = "rgba(239, 68, 68, 0.25)";
+      headerBadge.style.color = "#f87171";
+      headerBadge.style.border = "1px solid rgba(239, 68, 68, 0.5)";
+    }
+  }
+
+  if (authBanner) {
+    authBanner.style.display = hasToken ? "none" : "block";
   }
 }
 
