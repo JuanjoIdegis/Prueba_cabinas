@@ -992,6 +992,28 @@ const Store = {
     return "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\r\n");
   },
 
+  async eliminarItemHistorico(histId) {
+    if (!this.data.historico || !Array.isArray(this.data.historico)) return false;
+    const initialLen = this.data.historico.length;
+    this.data.historico = this.data.historico.filter((h, idx) => {
+      const idMatch = h.id ? (h.id === histId) : (`hist_idx_${idx}` === histId);
+      return !idMatch;
+    });
+    if (this.data.historico.length === initialLen) return false;
+
+    this._saveLocalCache();
+    this.notify();
+    return await this.saveData(`Eliminar registro de histórico (${histId})`);
+  },
+
+  async vaciarHistorico() {
+    const total = (this.data.historico || []).length;
+    this.data.historico = [];
+    this._saveLocalCache();
+    this.notify();
+    return await this.saveData(`Vaciar histórico completo (${total} registros eliminados)`);
+  },
+
   setGitHubToken(token) {
     if (!this.githubConfig) this.githubConfig = {};
     this.githubConfig.token = token ? token.trim() : "";
