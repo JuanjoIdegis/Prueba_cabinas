@@ -758,8 +758,8 @@
     "I1": {
       "puesto": "I",
       "slot": 1,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo I1",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -770,15 +770,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:21:05.652Z",
-      "slot_id": "I1",
-      "datalogger": false
+      "updated_at": ""
     },
     "I2": {
       "puesto": "I",
       "slot": 2,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo I2",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -789,15 +787,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:21:27.945Z",
-      "slot_id": "I2",
-      "datalogger": false
+      "updated_at": ""
     },
     "I3": {
       "puesto": "I",
       "slot": 3,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo I3",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -808,15 +804,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:21:47.929Z",
-      "slot_id": "I3",
-      "datalogger": false
+      "updated_at": ""
     },
     "I4": {
       "puesto": "I",
       "slot": 4,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo I4",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -827,15 +821,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:22:11.645Z",
-      "slot_id": "I4",
-      "datalogger": false
+      "updated_at": ""
     },
     "J1": {
       "puesto": "J",
       "slot": 1,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo J1",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -847,14 +839,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:22:38.941Z",
-      "slot_id": "J1"
+      "updated_at": "2026-09-08T11:15:00.000Z"
     },
     "J2": {
       "puesto": "J",
       "slot": 2,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo J2",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -865,15 +856,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:23:01.590Z",
-      "slot_id": "J2",
-      "datalogger": false
+      "updated_at": ""
     },
     "J3": {
       "puesto": "J",
       "slot": 3,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo J3",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -884,15 +873,13 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:23:20.839Z",
-      "slot_id": "J3",
-      "datalogger": false
+      "updated_at": ""
     },
     "J4": {
       "puesto": "J",
       "slot": 4,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo J4",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -903,9 +890,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:23:56.405Z",
-      "slot_id": "J4",
-      "datalogger": false
+      "updated_at": ""
     },
     "CG1_1": {
       "puesto": "CG1",
@@ -1354,40 +1339,38 @@
     "MESAS_1": {
       "puesto": "MESAS",
       "slot": 1,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo MESAS_1",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
       "iot": "",
       "datalogger": false,
-      "prueba": "Validación de nueva referencia de supercondensador",
+      "prueba": "",
       "responsable": "",
       "f_inicio": "",
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:45:58.516Z",
-      "slot_id": "MESAS_1"
+      "updated_at": ""
     },
     "MESAS_2": {
       "puesto": "MESAS",
       "slot": 2,
-      "estado": "en_uso_disponible",
-      "equipo": "Equipo MESAS_2",
+      "estado": "libre",
+      "equipo": "",
       "modelo": "",
       "sw": "",
       "validacion": "",
       "iot": "",
       "datalogger": false,
-      "prueba": "Test súper condensador",
+      "prueba": "",
       "responsable": "",
       "f_inicio": "",
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:25:14.895Z",
-      "slot_id": "MESAS_2"
+      "updated_at": ""
     },
     "MESAS_3": {
       "puesto": "MESAS",
@@ -1427,6 +1410,17 @@
     }
   },
   "historico": [
+    {
+      "id": "hist_j1_retirado",
+      "slot_id": "J1",
+      "puesto": "J",
+      "puesto_nombre": "Puesto J",
+      "slot": 1,
+      "equipo": "Prueba",
+      "modelo": "",
+      "motivo_cierre": "Retirado por usuario",
+      "fecha_registro": "2026-09-08T11:15:00.000Z"
+    },
     {
       "id": "hist_1788865947305",
       "slot_id": "J1",
