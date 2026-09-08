@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-0955" />
+  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-1005" />
 </head>
 <body>
 
@@ -22,7 +22,7 @@
           <h1>
             CABINA DE PRUEBAS 
             <span class="badge-pill">FLUIDRA LAB</span>
-            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-0955" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 09:55</span>
+            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-1005" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 10:05</span>
             <span class="badge-pill" id="cloud-sync-status-badge" onclick="event.stopPropagation(); openSyncModal();" style="cursor: pointer; font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 9999px; transition: all 0.2s ease;" title="Estado de conexión con GitHub">☁️ Comprobando...</span>
           </h1>
           <p>Control y trazabilidad de ensayos · Planta Cabina & Planta Piloto</p>
@@ -261,9 +261,16 @@
         </div>
 
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveSlotForm()">Guardar Cambios</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
+        <div>
+          <button type="button" class="btn btn-secondary" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-size: 0.8rem; padding: 0.5rem 0.8rem;" onclick="finalizarPruebaDesdeModal()" title="Archivar el ensayo actual en el histórico y limpiar fechas para iniciar otra prueba manteniendo el equipo y foto">
+            🏁 Fin de Ensayo
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveSlotForm()">Guardar Cambios</button>
+        </div>
       </div>
     </div>
   </div>
@@ -571,11 +578,11 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-0955"></script>
-  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-0955"></script>
-  <script src="js/store.js?v=v2.5.0-2026.09.08-0955"></script>
-  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-0955"></script>
-  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-0955"></script>
-  <script src="js/app.js?v=v2.5.0-2026.09.08-0955"></script>
+  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-1005"></script>
+  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-1005"></script>
+  <script src="js/store.js?v=v2.5.0-2026.09.08-1005"></script>
+  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-1005"></script>
+  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-1005"></script>
+  <script src="js/app.js?v=v2.5.0-2026.09.08-1005"></script>
 </body>
 </html>
