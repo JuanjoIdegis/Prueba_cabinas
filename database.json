@@ -153,8 +153,8 @@
     "A1": {
       "puesto": "A",
       "slot": 1,
-      "estado": "libre",
-      "equipo": "",
+      "estado": "en_uso_disponible",
+      "equipo": "8CD6",
       "modelo": "",
       "sw": "",
       "validacion": "",
@@ -189,8 +189,8 @@
     "A3": {
       "puesto": "A",
       "slot": 3,
-      "estado": "libre",
-      "equipo": "",
+      "estado": "en_uso_disponible",
+      "equipo": "A36E",
       "modelo": "",
       "sw": "",
       "validacion": "",
