@@ -341,8 +341,39 @@ const Store = {
             return;
           }
         }
+
+        // Fallback a descarga estándar si raw no respondió
+        if (!loaded) {
+          const resStd = await fetch(ghUrl, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json"
+            },
+            cache: "no-store"
+          });
+          if (resStd.ok) {
+            const jsonStd = await resStd.json();
+            if (jsonStd.download_url) {
+              const dlRes = await fetch(jsonStd.download_url + (jsonStd.download_url.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
+                headers: { "Authorization": `Bearer ${token}` },
+                cache: "no-store"
+              });
+              if (dlRes.ok) {
+                const remoteData = await dlRes.json();
+                if (remoteData && remoteData.slots) {
+                  this.applyRemoteData(remoteData);
+                  this.isGitHubConnected = true;
+                  this.isOnline = true;
+                  this.lastSyncTime = new Date();
+                  loaded = true;
+                  return;
+                }
+              }
+            }
+          }
+        }
       } catch (e) {
-        console.warn("GitHub API raw no disponible, intentando estándar:", e);
+        console.warn("GitHub API no disponible en este momento:", e);
       }
     }
 
