@@ -1646,13 +1646,56 @@ function saveBaseUrlSetting() {
 
 async function syncNowFromDevice() {
   if (!Store.githubConfig.token) {
-    showToast("⚠️ Este móvil no tiene el token configurado. Abre el enlace de autorización o pégalo en Ajustes.", "error");
+    showToast("⚠️ Este dispositivo no tiene el token configurado. Abre Ajustes para conectarlo.", "error");
     return;
   }
-  showToast("☁️ Conectando con GitHub y subiendo datos de este dispositivo...", "info");
-  const res = await Store.saveToGitHub("Sincronización manual forzada desde dispositivo");
+  showToast("☁️ Fusionando y subiendo equipos y fotos a GitHub...", "info");
+
+  // 1. Obtener los slots remotos de GitHub para no perder ningún puesto actualizado por otros
+  try {
+    const rawHeaders = {
+      "Authorization": `Bearer ${Store.githubConfig.token}`,
+      "Accept": "application/vnd.github.v3.raw"
+    };
+    const url = `https://api.github.com/repos/${Store.githubConfig.owner}/${Store.githubConfig.repo}/contents/${Store.githubConfig.filePath}?ref=${Store.githubConfig.branch}&_t=${Date.now()}`;
+    const res = await fetch(url, { headers: rawHeaders, cache: "no-store" });
+    if (res.ok) {
+      const remoteData = await res.json();
+      if (remoteData && remoteData.slots) {
+        if (!Store.data.slots) Store.data.slots = {};
+        Object.keys(remoteData.slots).forEach(sId => {
+          const rSlot = remoteData.slots[sId];
+          const lSlot = Store.data.slots[sId];
+          const localHasData = lSlot && (lSlot.equipo?.trim() || lSlot.imagen || (lSlot.estado && lSlot.estado !== "libre"));
+          const remoteHasData = rSlot && (rSlot.equipo?.trim() || rSlot.imagen || (rSlot.estado && rSlot.estado !== "libre"));
+
+          if (!localHasData && remoteHasData) {
+            // El remoto tiene datos y local no: adoptar remoto
+            Store.data.slots[sId] = rSlot;
+          } else if (localHasData && remoteHasData) {
+            // Ambos tienen datos: comparar marcas de tiempo
+            const rTime = rSlot.updated_at ? new Date(rSlot.updated_at).getTime() : 0;
+            const lTime = lSlot.updated_at ? new Date(lSlot.updated_at).getTime() : 0;
+            if (rTime > lTime) {
+              Store.data.slots[sId] = rSlot;
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("Aviso al descargar versión remota previa:", e);
+  }
+
+  // 2. Guardar en localStorage y subir a GitHub
+  localStorage.setItem("cabina_equipos_db", JSON.stringify(Store.data));
+  const res = await Store.saveToGitHub("Sincronización manual completa de equipos y fotos desde dispositivo");
   if (res && res.github) {
-    showToast("✅ ¡Todos los datos y fotos de este móvil se han guardado con éxito en GitHub!", "success");
+    showToast("✅ ¡Todos los datos y fotos de este dispositivo se han guardado con éxito en GitHub!", "success");
+    const banner = document.getElementById("pending-local-upload-banner");
+    if (banner) banner.style.display = "none";
+    Store.notify();
+    renderPuestos();
   } else if (res && res.localOnly) {
     showToast("⚠️ Falta token en este dispositivo.", "error");
   } else {
