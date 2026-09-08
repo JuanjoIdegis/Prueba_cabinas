@@ -629,26 +629,30 @@ function renderSlotCard(slot, slotId) {
           <span>Fin: ${slot.f_final || '--'}</span>
         </div>
 
-        <div class="slot-actions">
-          <button class="btn-slot" onclick="openEditModal('${slotId}')">
-            ✏️ Editar
-          </button>
-          <button class="btn-slot" style="color: #38bdf8; font-weight: 600;" onclick="confirmarFinalizarPrueba('${slotId}')" title="Concluir el ensayo actual: se archiva en histórico y se limpian fechas, manteniendo el equipo y foto en el puesto">
-            🏁 Fin Ensayo
-          </button>
-          <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
-            🔎 Rastrear
-          </button>
-          <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de ${slotId}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            QR
-          </button>
-          <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
-            📜 Historial
-          </button>
-          <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y retirar el equipo completamente (slot queda vacío)">
-            🚪 Retirar
-          </button>
+        <div class="slot-actions-group">
+          <div class="slot-actions-row primary">
+            <button class="btn-slot" onclick="openEditModal('${slotId}')">
+              ✏️ Editar
+            </button>
+            <button class="btn-slot btn-fin-ensayo" onclick="confirmarFinalizarPrueba('${slotId}')" title="Concluir el ensayo actual: se archiva en histórico y se limpian fechas, manteniendo el equipo y foto en el puesto">
+              🏁 Fin Ensayo
+            </button>
+          </div>
+          <div class="slot-actions-row secondary">
+            <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
+              🔎 Rastrear
+            </button>
+            <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de ${slotId}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              QR
+            </button>
+            <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
+              📜 Historial
+            </button>
+            <button class="btn-slot btn-retirar" onclick="confirmarLiberar('${slotId}')" title="Desconectar y retirar el equipo completamente (slot queda vacío)">
+              🚪 Retirar
+            </button>
+          </div>
         </div>
       `}
     </div>
