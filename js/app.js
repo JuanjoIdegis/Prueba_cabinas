@@ -831,15 +831,22 @@ async function saveSlotForm() {
   closeEditModal();
   showToast(`Guardando ${targetSlotId}...`, "info");
 
-  const syncResult = await Store.updateSlot(slotData);
-  if (syncResult && syncResult.github) {
-    showToast(`✅ ${targetSlotId} sincronizado en GitHub`, "success");
-  } else if (syncResult && syncResult.localOnly) {
-    showToast(`⚠️ ${targetSlotId} guardado SOLO en este móvil (Falta autorizar GitHub)`, "warning");
-  } else if (syncResult && !syncResult.success) {
-    showToast(`⚠️ Guardado en móvil, pero falló GitHub: ${syncResult.error || 'Reintentando...'}`, "warning");
-  } else {
-    showToast(`✅ ${targetSlotId} actualizado`, "success");
+  try {
+    const syncResult = await Store.updateSlot(slotData);
+    renderApp();
+    if (syncResult && syncResult.github) {
+      showToast(`✅ ${targetSlotId} sincronizado en GitHub`, "success");
+    } else if (syncResult && syncResult.localOnly) {
+      showToast(`⚠️ ${targetSlotId} guardado localmente (Falta autorizar GitHub)`, "warning");
+    } else if (syncResult && !syncResult.success) {
+      showToast(`⚠️ Guardado localmente: ${syncResult.error || 'Reintentando...'}`, "warning");
+    } else {
+      showToast(`✅ ${targetSlotId} actualizado`, "success");
+    }
+  } catch (err) {
+    console.error("Error al guardar slot:", err);
+    renderApp();
+    showToast(`Guardado en memoria: ${err.message || 'Error'}`, "warning");
   }
 }
 
