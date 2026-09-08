@@ -130,12 +130,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
 
+  // Soporte para acceso directo de Administrador vía PIN en URL (?pin=1923)
+  const pin = urlParams.get("pin");
+  if (pin === ADMIN_PIN) {
+    sessionStorage.setItem("cabina_admin_auth", "true");
+    urlParams.delete("pin");
+  }
+
   // Soporte para autorizar un móvil vía QR de autorización (?auth=...)
   const auth = urlParams.get("auth") || urlParams.get("token");
   if (auth) {
     Store.setGitHubToken(auth);
-    sessionStorage.setItem("cabina_admin_auth", "true");
-    showToast("✅ Dispositivo autorizado con sincronización Cloud y modo Administrador", "success");
+    showToast("✅ Dispositivo conectado y sincronizado con GitHub", "success");
     urlParams.delete("auth");
     urlParams.delete("token");
     const cleanSearch = urlParams.toString() ? `?${urlParams.toString()}` : "";
@@ -948,8 +954,17 @@ function verificarAdminPin() {
       pinInput.value = "";
       pinInput.focus();
     }
-    showToast("❌ PIN incorrecto. Solo el administrador puede autorizar dispositivos.", "warning");
+    showToast("❌ PIN incorrecto. Solo el administrador puede autorizar dispositivos y cambiar ajustes.", "warning");
   }
+}
+
+function cerrarSesionAdmin() {
+  sessionStorage.removeItem("cabina_admin_auth");
+  closeSyncModal();
+  closeMobileConnectModal();
+  const editModal = document.getElementById("edit-puestos-modal");
+  if (editModal) editModal.classList.remove("active");
+  showToast("🔒 Modo Administrador bloqueado", "info");
 }
 
 /* ==================== MÓDULO: MOVER EQUIPO A HUECO LIBRE ==================== */
@@ -1681,6 +1696,12 @@ function importDatabaseJSON(event) {
    ========================================================================== */
 
 function openEditPuestosModal() {
+  solicitarAdminPin(() => {
+    ejecutarOpenEditPuestosModal();
+  });
+}
+
+function ejecutarOpenEditPuestosModal() {
   const container = document.getElementById("edit-puestos-container");
   if (!container) return;
 
