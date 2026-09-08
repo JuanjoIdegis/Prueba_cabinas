@@ -1053,6 +1053,16 @@ function saveBaseUrlSetting() {
   }
 }
 
+async function syncNowFromDevice() {
+  showToast("☁️ Conectando con GitHub y subiendo datos de este dispositivo...", "info");
+  const res = await Store.saveToGitHub("Sincronización manual forzada desde dispositivo");
+  if (res && res.github) {
+    showToast("✅ ¡Todos los datos y fotos de este móvil se han guardado con éxito en GitHub!", "success");
+  } else {
+    showToast("⚠️ Fallo al subir a GitHub: " + (res.error || "comprueba conexión"), "error");
+  }
+}
+
 function exportDatabaseJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(Store.data, null, 2));
   const downloadAnchor = document.createElement("a");
