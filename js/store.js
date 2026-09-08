@@ -97,6 +97,68 @@ const Store = {
     return { id: puestoId, nombre: `Puesto ${puestoId}`, slotsCount: 4, plantaId: "zona1", plantaNombre: "Zona 1: Cabinas Test", plantaIcono: "⚡" };
   },
 
+  isSlotLibre(slot) {
+    if (!slot) return true;
+    const hasEquipment = !!(slot.equipo && slot.equipo.trim());
+    const hasAnyData = hasEquipment || !!(slot.modelo && slot.modelo.trim()) || !!(slot.sw && slot.sw.trim()) || !!(slot.iot && slot.iot.trim()) || !!(slot.prueba && slot.prueba.trim()) || !!(slot.responsable && slot.responsable.trim()) || !!(slot.descripcion && slot.descripcion.trim()) || !!slot.imagen;
+    return (slot.estado === "libre" || !slot.estado) && !hasAnyData;
+  },
+
+  getFreeSlots(excludeSlotId = null) {
+    const freeSlots = [];
+    const plantas = this.getPlantas();
+    for (const pl of plantas) {
+      for (const p of pl.puestos) {
+        const count = p.slotsCount || 4;
+        for (let s = 1; s <= count; s++) {
+          const sId = (p.id.length === 1) ? `${p.id}${s}` : `${p.id}_${s}`;
+          if (excludeSlotId && sId === excludeSlotId) continue;
+          const slotData = this.data.slots ? this.data.slots[sId] : null;
+          if (this.isSlotLibre(slotData)) {
+            freeSlots.push({
+              slot_id: sId,
+              puesto: p.id,
+              puesto_nombre: p.nombre,
+              slot_num: s,
+              planta_id: pl.id,
+              planta_nombre: pl.nombre,
+              planta_icono: pl.icono
+            });
+          }
+        }
+      }
+    }
+    return freeSlots;
+  },
+
+  getOccupiedSlots(excludeSlotId = null) {
+    const occupiedSlots = [];
+    const plantas = this.getPlantas();
+    for (const pl of plantas) {
+      for (const p of pl.puestos) {
+        const count = p.slotsCount || 4;
+        for (let s = 1; s <= count; s++) {
+          const sId = (p.id.length === 1) ? `${p.id}${s}` : `${p.id}_${s}`;
+          if (excludeSlotId && sId === excludeSlotId) continue;
+          const slotData = this.data.slots ? this.data.slots[sId] : null;
+          if (slotData && !this.isSlotLibre(slotData)) {
+            occupiedSlots.push({
+              slot_id: sId,
+              puesto: p.id,
+              puesto_nombre: p.nombre,
+              slot_num: s,
+              planta_id: pl.id,
+              planta_nombre: pl.nombre,
+              planta_icono: pl.icono,
+              data: slotData
+            });
+          }
+        }
+      }
+    }
+    return occupiedSlots;
+  },
+
   async updatePuestosConfig(updatedPlantas) {
     this.data.plantas = updatedPlantas;
     this.data.puestos = [].concat(...updatedPlantas.map(pl => pl.puestos.map(p => p.id)));
@@ -587,6 +649,91 @@ const Store = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slot_id: slotId })
+      }).catch(() => {});
+    } catch (e) {}
+
+    return syncResult;
+  },
+
+  async moverEquipo(fromSlotId, toSlotId) {
+    if (!this.data.slots || !this.data.slots[fromSlotId]) {
+      throw new Error(`El hueco origen ${fromSlotId} no existe o no tiene datos.`);
+    }
+
+    const source = this.data.slots[fromSlotId];
+    if (this.isSlotLibre(source)) {
+      throw new Error(`El hueco origen ${fromSlotId} está libre y no contiene ningún equipo.`);
+    }
+
+    const fromParsed = this._parseSlotId(fromSlotId, source);
+    const toParsed = this._parseSlotId(toSlotId, this.data.slots[toSlotId]);
+
+    // 1. Guardar copia en el slot destino manteniendo todos los campos
+    this.data.slots[toSlotId] = {
+      ...source,
+      puesto: toParsed.puesto,
+      slot: toParsed.slot,
+      estado: (source.estado && source.estado !== "libre") ? source.estado : "en_uso_disponible",
+      updated_at: new Date().toISOString()
+    };
+
+    // 2. Vaciar el slot origen
+    this.data.slots[fromSlotId] = {
+      puesto: fromParsed.puesto,
+      slot: fromParsed.slot,
+      estado: "libre",
+      equipo: "",
+      modelo: "",
+      sw: "",
+      validacion: "",
+      iot: "",
+      datalogger: false,
+      prueba: "",
+      responsable: "",
+      f_inicio: "",
+      f_final: "",
+      descripcion: "",
+      imagen: "",
+      updated_at: new Date().toISOString()
+    };
+
+    // 3. Registrar en histórico el traslado para trazabilidad
+    if (!this.data.historico) this.data.historico = [];
+    this.data.historico.unshift({
+      id: "hist_" + Date.now(),
+      slot_id: fromSlotId,
+      puesto: fromParsed.puesto,
+      puesto_nombre: fromParsed.puesto_nombre,
+      planta_id: fromParsed.planta_id,
+      planta_nombre: fromParsed.planta_nombre,
+      slot: fromParsed.slot,
+      equipo: (source.equipo && source.equipo.trim()) || (source.iot && source.iot.trim()) || "Equipo trasladado",
+      modelo: source.modelo || "",
+      sw: source.sw || "",
+      validacion: source.validacion || "",
+      iot: source.iot || "",
+      datalogger: !!source.datalogger,
+      prueba: source.prueba || "",
+      responsable: source.responsable || "No especificado",
+      f_inicio: source.f_inicio || "",
+      f_final: new Date().toISOString().slice(0, 10),
+      descripcion: source.descripcion || "",
+      imagen: source.imagen || "",
+      motivo_cierre: `Trasladado al hueco ${toSlotId} (${toParsed.puesto_nombre})`,
+      fecha_registro: new Date().toISOString()
+    });
+
+    localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
+    this.notify();
+
+    const nombreEq = source.equipo || source.iot || "Equipo";
+    const syncResult = await this.saveToGitHub(`Mover ${nombreEq} de ${fromSlotId} a ${toSlotId}`);
+
+    try {
+      fetch("/api/equipos/mover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_slot_id: fromSlotId, to_slot_id: toSlotId })
       }).catch(() => {});
     } catch (e) {}
 
