@@ -1343,10 +1343,15 @@ body {
 }
 
 /* Modal Visor de Imagen Grande */
+.image-viewer-modal {
+  z-index: 9999 !important;
+}
+
 .image-viewer-modal .modal-window {
   max-width: 850px;
   background: #000;
   border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
 }
 
 .image-viewer-content {
