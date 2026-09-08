@@ -1685,6 +1685,8 @@ function importDatabaseJSON(event) {
       const parsed = JSON.parse(e.target.result);
       if (parsed.slots) {
         Store.applyRemoteData(parsed);
+        renderPuestos();
+        updateMetrics();
         await Store.saveToGitHub("Importar copia de seguridad database.json");
         showToast("✅ Base de datos importada y sincronizada correctamente.", "success");
       } else {
