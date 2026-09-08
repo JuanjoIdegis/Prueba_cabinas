@@ -826,9 +826,9 @@
     "J1": {
       "puesto": "J",
       "slot": 1,
-      "estado": "en_uso_disponible",
-      "equipo": "prueba",
-      "modelo": "prueba",
+      "estado": "libre",
+      "equipo": "",
+      "modelo": "",
       "sw": "",
       "validacion": "",
       "iot": "",
@@ -839,8 +839,7 @@
       "f_final": "",
       "descripcion": "",
       "imagen": "",
-      "updated_at": "2026-09-08T12:12:55.518Z",
-      "slot_id": "J1"
+      "updated_at": "2026-09-08T12:15:41.202Z"
     },
     "J2": {
       "puesto": "J",
@@ -1411,6 +1410,29 @@
     }
   },
   "historico": [
+    {
+      "id": "hist_1788869741201",
+      "slot_id": "J1",
+      "puesto": "J",
+      "puesto_nombre": "Puesto J",
+      "planta_id": "zona1",
+      "planta_nombre": "Zona 1: Cabinas Test",
+      "slot": 1,
+      "equipo": "prueba",
+      "modelo": "prueba",
+      "sw": "",
+      "validacion": "",
+      "iot": "",
+      "datalogger": false,
+      "prueba": "Ensayo",
+      "responsable": "No especificado",
+      "f_inicio": "",
+      "f_final": "2026-09-08",
+      "descripcion": "",
+      "imagen": "",
+      "motivo_cierre": "Ensayo finalizado / Liberado",
+      "fecha_registro": "2026-09-08T12:15:41.201Z"
+    },
     {
       "id": "hist_j1_retirado",
       "slot_id": "J1",
