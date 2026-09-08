@@ -1088,15 +1088,56 @@ body {
 }
 
 /* Acciones del Slot */
+.slot-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  width: 100%;
+}
+
+.slot-actions-row {
+  display: flex;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.slot-actions-row.primary .btn-slot {
+  padding: 0.42rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.slot-actions-row.primary .btn-slot.btn-fin-ensayo {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.slot-actions-row.primary .btn-slot.btn-fin-ensayo:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #fff;
+}
+
+.slot-actions-row.secondary .btn-slot {
+  font-size: 0.68rem;
+  padding: 0.32rem 0.4rem;
+  white-space: nowrap;
+}
+
 .slot-actions {
   display: flex;
-  gap: 0.45rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   margin-top: 0.5rem;
+  width: 100%;
 }
 
 .btn-slot {
   flex: 1;
-  padding: 0.35rem 0.55rem;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
   font-size: 0.72rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -1107,14 +1148,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-slot:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-slot.btn-retirar {
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.btn-slot.btn-retirar:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: var(--accent-rose);
+  color: #fff;
 }
 
 .btn-slot.connect {
