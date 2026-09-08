@@ -639,7 +639,7 @@ function renderSlotCard(slot, slotId) {
             </button>
           </div>
           <div class="slot-actions-row secondary">
-            <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
+            <button class="btn-slot" onclick="openTrackEquipmentModal('${escapeHtml((slot.iot && slot.iot.trim()) || (slot.equipo && slot.equipo.trim()) || slotId)}')" title="Rastrear trazabilidad e histórico por matrícula IoT">
               🔎 Rastrear
             </button>
             <button class="btn-slot" onclick="openSlotQRModal('${slotId}')" title="Generar QR de ${slotId}">
@@ -1475,17 +1475,22 @@ function renderTrackQuickChips() {
 
   const known = Store.getAllKnownEquipments();
   if (known.length === 0) {
-    container.innerHTML = `<span style="font-size: 0.72rem; color: var(--text-dim);">No hay equipos registrados aún</span>`;
+    container.innerHTML = `<span style="font-size: 0.72rem; color: var(--text-dim);">No hay matrículas registradas aún</span>`;
     return;
   }
 
-  container.innerHTML = known.slice(0, 12).map(eq => `
-    <button class="eq-track-chip ${currentTrackedQuery.toLowerCase() === eq.nombre.toLowerCase() ? 'active' : ''}" onclick="selectTrackChip('${escapeHtml(eq.nombre)}')">
-      <span>${eq.is_connected ? '🟢' : '⚪'}</span>
-      <span>${escapeHtml(eq.nombre)}</span>
-      ${eq.modelo ? `<small style="opacity: 0.6;">(${escapeHtml(eq.modelo)})</small>` : ''}
-    </button>
-  `).join("");
+  container.innerHTML = known.slice(0, 16).map(eq => {
+    const chipQuery = eq.iot || eq.nombre;
+    const label = eq.iot ? `🏷️ IoT: ${escapeHtml(eq.iot)}` : `⚡ ${escapeHtml(eq.nombre)}`;
+    const sub = (eq.iot && eq.equipo && eq.equipo !== eq.iot) ? ` (${escapeHtml(eq.equipo)})` : (eq.modelo ? ` (${escapeHtml(eq.modelo)})` : '');
+    return `
+      <button class="eq-track-chip ${currentTrackedQuery.toLowerCase() === chipQuery.toLowerCase() ? 'active' : ''}" onclick="selectTrackChip('${escapeHtml(chipQuery)}')">
+        <span>${eq.is_connected ? '🟢' : '⚪'}</span>
+        <span>${label}</span>
+        ${sub ? `<small style="opacity: 0.65; font-size: 0.72rem;">${sub}</small>` : ''}
+      </button>
+    `;
+  }).join("");
 }
 
 function selectTrackChip(eqName) {
