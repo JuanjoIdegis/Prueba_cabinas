@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-0917" />
+  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-0935" />
 </head>
 <body>
 
@@ -22,7 +22,7 @@
           <h1>
             CABINA DE PRUEBAS 
             <span class="badge-pill">FLUIDRA LAB</span>
-            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-0917" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 09:17</span>
+            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-0935" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 09:35</span>
           </h1>
           <p>Control y trazabilidad de ensayos · Planta Cabina & Planta Piloto</p>
         </div>
@@ -418,6 +418,16 @@
           </small>
         </div>
 
+        <!-- Sincronización Manual Inmediata -->
+        <div style="margin-bottom: 1.2rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 0.85rem;">
+          <button class="btn btn-primary" style="width: 100%; font-size: 0.85rem; padding: 0.6rem; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);" onclick="syncNowFromDevice()">
+            ☁️ Subir datos de este móvil a GitHub ahora
+          </button>
+          <small style="font-size: 0.72rem; color: #34d399; display: block; margin-top: 0.35rem; text-align: center;">
+            Sube y guarda en GitHub todos los equipos y fotos que hayas rellenado en este dispositivo.
+          </small>
+        </div>
+
         <!-- Copia de seguridad -->
         <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
           <label style="font-size: 0.78rem;">COPIA DE SEGURIDAD LOCAL</label>
@@ -555,11 +565,11 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-0917"></script>
-  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-0917"></script>
-  <script src="js/store.js?v=v2.5.0-2026.09.08-0917"></script>
-  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-0917"></script>
-  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-0917"></script>
-  <script src="js/app.js?v=v2.5.0-2026.09.08-0917"></script>
+  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-0935"></script>
+  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-0935"></script>
+  <script src="js/store.js?v=v2.5.0-2026.09.08-0935"></script>
+  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-0935"></script>
+  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-0935"></script>
+  <script src="js/app.js?v=v2.5.0-2026.09.08-0935"></script>
 </body>
 </html>
