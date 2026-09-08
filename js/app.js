@@ -814,7 +814,7 @@ function openQRScannerModal() {
   QRScanner.start("qr-video-element", (result) => {
     closeQRScannerModal();
     if (result.puesto && result.slot) {
-      const slotId = `${result.puesto}${result.slot}`;
+      const slotId = (result.puesto.length > 2 || result.puesto.includes('_')) ? `${result.puesto}_${result.slot}` : `${result.puesto}${result.slot}`;
       showToast(`Código detectado: ${slotId}`, "success");
       openEditModal(slotId);
     } else if (result.puesto) {
