@@ -1180,6 +1180,35 @@ body {
   color: #fff;
 }
 
+.btn-slot.btn-mover {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.35);
+  background: rgba(192, 132, 252, 0.08);
+}
+
+.btn-slot.btn-mover:hover {
+  background: rgba(192, 132, 252, 0.22);
+  border-color: #c084fc;
+  color: #fff;
+}
+
+.btn-slot.btn-traer {
+  flex: 1.2;
+  background: rgba(139, 92, 246, 0.12);
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.35);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.45rem 0.55rem;
+  white-space: nowrap;
+}
+
+.btn-slot.btn-traer:hover {
+  background: rgba(139, 92, 246, 0.28);
+  border-color: #c084fc;
+  color: #fff;
+}
+
 .btn-slot.connect {
   flex: 1.7;
   background: var(--status-libre-bg);
@@ -2269,3 +2298,71 @@ body {
     margin: 10mm;
   }
 }
+
+/* ==================== ESTILOS: MODAL MOVER EQUIPO ==================== */
+.mover-banner-card {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+.mover-filter-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: 9999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.mover-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.mover-filter-pill.active {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+.mover-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.55rem;
+}
+
+.mover-slot-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.mover-slot-card:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.mover-slot-card.selected {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: #a855f7;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}
+
+.mover-preview-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
