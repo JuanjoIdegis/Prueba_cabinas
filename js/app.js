@@ -576,11 +576,11 @@ function renderSlotCard(slot, slotId) {
           <div class="slot-empty-text" onclick="openEditModal('${slotId}')" title="Haz clic para conectar un equipo en ${slotId}">
             Sin equipo conectado.<br>Disponible para pruebas.
           </div>
-          <div style="display: flex; gap: 0.4rem; justify-content: center; margin-top: 0.2rem;">
+          <div class="slot-empty-actions">
             <button class="btn btn-slot connect" onclick="openEditModal('${slotId}')">
               ➕ Conectar Equipo
             </button>
-            <button class="btn btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
+            <button class="btn btn-slot btn-slot-hist-empty" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
               📜 Historial
             </button>
           </div>
