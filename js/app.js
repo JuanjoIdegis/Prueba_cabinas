@@ -633,6 +633,9 @@ function renderSlotCard(slot, slotId) {
           <button class="btn-slot" onclick="openEditModal('${slotId}')">
             ✏️ Editar
           </button>
+          <button class="btn-slot" style="color: #38bdf8; font-weight: 600;" onclick="confirmarFinalizarPrueba('${slotId}')" title="Concluir el ensayo actual: se archiva en histórico y se limpian fechas, manteniendo el equipo y foto en el puesto">
+            🏁 Fin Ensayo
+          </button>
           <button class="btn-slot" onclick="openTrackEquipmentModal('${(slot.equipo || '').replace(/'/g, "\\'")}')" title="Saber en qué otros puestos ha estado este equipo">
             🔎 Rastrear
           </button>
@@ -643,8 +646,8 @@ function renderSlotCard(slot, slotId) {
           <button class="btn-slot" onclick="openHistoricoModal('${slotId}')" title="Ver historial de ensayos en ${slotId}">
             📜 Historial
           </button>
-          <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y archivar en histórico">
-            Liberar
+          <button class="btn-slot" style="color: var(--accent-rose);" onclick="confirmarLiberar('${slotId}')" title="Desconectar y retirar el equipo completamente (slot queda vacío)">
+            🚪 Retirar
           </button>
         </div>
       `}
@@ -818,13 +821,43 @@ async function saveSlotForm() {
   }
 }
 
+async function confirmarFinalizarPrueba(slotId) {
+  const slot = (Store.data.slots && Store.data.slots[slotId]) || {};
+  const nombreEquipo = slot.equipo || (slot.iot ? `Equipo ${slot.iot}` : slotId);
+  const pruebaActual = slot.prueba ? `"${slot.prueba}"` : "el ensayo actual";
+
+  const confirmMsg = `¿Dar por FINALIZADO ${pruebaActual} en ${slotId} (${nombreEquipo})?\n\n` +
+    `✅ Se guardará en el Histórico con fecha fin de hoy.\n` +
+    `📌 El equipo, fotos, código IoT y notas de carátula se MANTIENEN en el puesto.\n` +
+    `🔄 Se limpian las fechas para iniciar el siguiente ensayo cuando quieras.`;
+
+  if (confirm(confirmMsg)) {
+    showToast(`Archivando ensayo de ${slotId}...`, "info");
+    const syncResult = await Store.finalizarPruebaSlot(slotId);
+    if (syncResult && syncResult.github) {
+      showToast(`✅ Ensayo archivado. ${nombreEquipo} continúa conectado en ${slotId}.`, "success");
+    } else {
+      showToast(`Ensayo archivado en Histórico (Guardado localmente)`, "info");
+    }
+  }
+}
+
+async function finalizarPruebaDesdeModal() {
+  if (!currentEditSlotId) return;
+  const slotId = currentEditSlotId;
+  closeEditModal();
+  await confirmarFinalizarPrueba(slotId);
+}
+
 async function confirmarLiberar(slotId) {
-  if (confirm(`¿Estás seguro de liberar ${slotId}? El equipo actual se archivará en el Histórico de ensayos.`)) {
+  const slot = (Store.data.slots && Store.data.slots[slotId]) || {};
+  const nombreEquipo = slot.equipo || (slot.iot ? `Equipo ${slot.iot}` : slotId);
+  if (confirm(`¿RETIRAR y dejar totalmente VACÍO el puesto ${slotId} (${nombreEquipo})?\n\n• El equipo y fotos se archivarán en el Histórico.\n• El puesto quedará LIBRE para conectar otro equipo nuevo desde cero.`)) {
     const syncResult = await Store.liberarSlot(slotId);
     if (syncResult && syncResult.github) {
-      showToast(`✅ ${slotId} liberado y archivado en GitHub`, "warning");
+      showToast(`✅ ${slotId} retirado y archivado en GitHub (Puesto Libre)`, "warning");
     } else {
-      showToast(`${slotId} liberado y archivado en el Histórico`, "warning");
+      showToast(`${slotId} retirado y archivado en el Histórico`, "warning");
     }
   }
 }
