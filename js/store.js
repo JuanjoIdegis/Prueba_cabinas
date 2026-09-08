@@ -318,6 +318,23 @@ const Store = {
   async fetchData(silent = false) {
     let loaded = false;
 
+    // Si estamos en servidor local (ej: python server.py en localhost o por IP Wi-Fi), consultar /api/equipos directamente
+    if (window.location.hostname !== "juanjoidegis.github.io" && window.location.protocol.startsWith("http")) {
+      try {
+        const localRes = await fetch("./api/equipos?_t=" + Date.now(), { cache: "no-store" });
+        if (localRes.ok) {
+          const localData = await localRes.json();
+          this.applyRemoteData(localData);
+          this.isOnline = true;
+          this.isLocalServer = true;
+          loaded = true;
+          return;
+        }
+      } catch (e) {
+        // Fallback a GitHub
+      }
+    }
+
     // A. Intentar con GitHub API si tenemos token o si el repo es público
     try {
       const headers = { "Accept": "application/vnd.github.v3+json" };
@@ -994,6 +1011,25 @@ const Store = {
   },
 
   async saveToGitHub(commitMessage) {
+    // Si estamos ejecutando desde el servidor local (python server.py / iniciar_cabina.bat)
+    if (window.location.hostname !== "juanjoidegis.github.io" && window.location.protocol.startsWith("http")) {
+      try {
+        const localSaveRes = await fetch("./api/equipos/save-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(this.data)
+        });
+        if (localSaveRes.ok) {
+          this.isLocalServer = true;
+          this.isOnline = true;
+          this.lastSyncTime = new Date();
+          return { success: true, localServer: true, github: true };
+        }
+      } catch (e) {
+        // Si no responde el endpoint local, continuar con GitHub
+      }
+    }
+
     const token = this.githubConfig.token;
 
     if (!token) {
