@@ -986,19 +986,24 @@ const Store = {
     }
 
     try {
-      // Si no tenemos el SHA actual del archivo, obtenerlo primero
-      if (!this.githubSha) {
+      // SIEMPRE obtener el último SHA de GitHub para que el PUT suba directamente sin conflictos 409
+      try {
         const getUrl = `https://api.github.com/repos/${this.githubConfig.owner}/${this.githubConfig.repo}/contents/${this.githubConfig.filePath}?ref=${this.githubConfig.branch}&_t=${Date.now()}`;
         const getRes = await fetch(getUrl, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Accept": "application/vnd.github.v3+json"
-          }
+          },
+          cache: "no-store"
         });
         if (getRes.ok) {
           const getJson = await getRes.json();
-          this.githubSha = getJson.sha;
+          if (getJson && getJson.sha) {
+            this.githubSha = getJson.sha;
+          }
         }
+      } catch (e) {
+        console.warn("No se pudo obtener SHA previo:", e);
       }
 
       // Codificar contenido a Base64 con UTF-8 usando chunks rápidos
