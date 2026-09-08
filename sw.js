@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cabina-v2.5.0-2026.09.08-1018';
+const CACHE_NAME = 'cabina-v2.6.0-2026.09.08-1141';
 const ASSETS = [
   './',
   './index.html',
