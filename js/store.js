@@ -842,9 +842,9 @@ const Store = {
   },
 
   /**
-   * Comprime una imagen a resolución óptima (máx 1100px) y formato WebP/JPEG
+   * Comprime y optimiza una imagen a resolución ligera (~35-60KB) para agilizar guardado en base de datos
    */
-  compressImage(file, maxWidth = 1100, maxHeight = 900, quality = 0.82) {
+  compressImage(file, maxWidth = 760, maxHeight = 760, quality = 0.68) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -853,6 +853,7 @@ const Store = {
           let width = img.width;
           let height = img.height;
 
+          // Escalar manteniendo proporción
           if (width > height) {
             if (width > maxWidth) {
               height = Math.round((height * maxWidth) / width);
@@ -869,9 +870,14 @@ const Store = {
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
+
+          // Fondo blanco para evitar fondos negros en caso de transparencias
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
 
-          const dataUrl = canvas.toDataURL("image/webp", quality);
+          // Compresión optimizada en JPEG universalmente soportada con tamaño mínimo
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
           resolve(dataUrl);
         };
         img.onerror = reject;
