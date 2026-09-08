@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-1013" />
+  <link rel="stylesheet" href="css/style.css?v=v2.5.0-2026.09.08-1018" />
 </head>
 <body>
 
@@ -22,7 +22,7 @@
           <h1>
             CABINA DE PRUEBAS 
             <span class="badge-pill">FLUIDRA LAB</span>
-            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-1013" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 10:13</span>
+            <span class="badge-pill build-badge" id="app-build-badge" data-build="2026.09.08-1018" onclick="event.stopPropagation(); forceAppCacheRefresh();" title="Versión y compilación activa. Pulsa para vaciar caché y forzar recarga limpia">v2.5.0 · 08/09 10:18</span>
             <span class="badge-pill" id="cloud-sync-status-badge" onclick="event.stopPropagation(); openSyncModal();" style="cursor: pointer; font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 9999px; transition: all 0.2s ease;" title="Estado de conexión con GitHub">☁️ Comprobando...</span>
           </h1>
           <p>Control y trazabilidad de ensayos · Planta Cabina & Planta Piloto</p>
@@ -61,7 +61,7 @@
       <div class="header-actions">
         <button class="btn btn-primary" onclick="openTrackEquipmentModal()" style="background: linear-gradient(135deg, #0284c7, #2563eb); border: none; box-shadow: 0 2px 10px rgba(37,99,235,0.35);" title="Búsqueda global: saber en qué puestos ha estado un equipo y dónde está ahora">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span>🔍 Rastrear Equipo</span>
+          <span>🔍 Rastrear (IoT)</span>
         </button>
         <button class="btn btn-accent" onclick="openQRScannerModal()" title="Escanear código QR en puesto físico con la cámara">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -507,7 +507,7 @@
       <div style="padding: 0.9rem 1.2rem; background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.6rem;">
         <div style="display: flex; gap: 0.6rem; align-items: center;">
           <div style="position: relative; flex: 1;">
-            <input type="text" id="track-search-input" class="form-input" placeholder="🔍 Escribe nombre de equipo, modelo, responsable, SW o ID IoT..." style="font-size: 0.9rem; padding: 0.6rem 0.9rem; border-radius: var(--radius-md);" />
+            <input type="text" id="track-search-input" class="form-input" placeholder="🔍 Escribe la matrícula / código IoT (ej: 8CD6, A36E) o nombre..." style="font-size: 0.9rem; padding: 0.6rem 0.9rem; border-radius: var(--radius-md);" />
             <button id="track-clear-btn" onclick="clearTrackSearch()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; display: none; font-size: 1rem;">&times;</button>
           </div>
           <button class="btn btn-primary" onclick="performEquipmentTracking()" style="padding: 0.6rem 1.1rem;">Buscar</button>
@@ -515,7 +515,7 @@
 
         <!-- Chips de equipos conocidos sugeridos -->
         <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-          <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;">Equipos detectados:</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;">Matrículas IoT detectadas:</span>
           <div id="track-quick-chips" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
             <!-- Inyectado dinámicamente -->
           </div>
@@ -578,11 +578,11 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-1013"></script>
-  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-1013"></script>
-  <script src="js/store.js?v=v2.5.0-2026.09.08-1013"></script>
-  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-1013"></script>
-  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-1013"></script>
-  <script src="js/app.js?v=v2.5.0-2026.09.08-1013"></script>
+  <script src="js/qrcode.min.js?v=v2.5.0-2026.09.08-1018"></script>
+  <script src="js/jsqr.min.js?v=v2.5.0-2026.09.08-1018"></script>
+  <script src="js/store.js?v=v2.5.0-2026.09.08-1018"></script>
+  <script src="js/qr-scanner.js?v=v2.5.0-2026.09.08-1018"></script>
+  <script src="js/qr-generator.js?v=v2.5.0-2026.09.08-1018"></script>
+  <script src="js/app.js?v=v2.5.0-2026.09.08-1018"></script>
 </body>
 </html>
