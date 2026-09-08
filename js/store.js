@@ -373,6 +373,19 @@ const Store = {
     let hasChanges = false;
     if (!this.data.slots) this.data.slots = {};
 
+    let localPendingSlots = [];
+
+    // 1. Comprobar si hay huecos en este dispositivo que tienen datos pero en remoto están vacíos
+    Object.keys(this.data.slots).forEach(sId => {
+      const lSlot = this.data.slots[sId];
+      const rSlot = remoteData.slots[sId];
+      const localHasData = lSlot && (lSlot.equipo?.trim() || lSlot.imagen || (lSlot.estado && lSlot.estado !== "libre"));
+      const remoteHasData = rSlot && (rSlot.equipo?.trim() || rSlot.imagen || (rSlot.estado && rSlot.estado !== "libre"));
+      if (localHasData && !remoteHasData) {
+        localPendingSlots.push(sId);
+      }
+    });
+
     Object.keys(remoteData.slots).forEach(slotId => {
       const remoteSlot = remoteData.slots[slotId];
       const localSlot = this.data.slots[slotId];
@@ -383,9 +396,13 @@ const Store = {
       } else {
         const remoteTime = remoteSlot.updated_at ? new Date(remoteSlot.updated_at).getTime() : 0;
         const localTime = localSlot.updated_at ? new Date(localSlot.updated_at).getTime() : 0;
+        const localHasData = localSlot && (localSlot.equipo?.trim() || localSlot.imagen || (localSlot.estado && localSlot.estado !== "libre"));
+        const remoteHasData = remoteSlot && (remoteSlot.equipo?.trim() || remoteSlot.imagen || (remoteSlot.estado && remoteSlot.estado !== "libre"));
 
-        // Si el remoto es igual o más reciente, o si el remoto tiene datos y local no
-        if (remoteTime >= localTime) {
+        // Si el local tiene datos y remoto está vacío (ej: equipos guardados en este móvil antes de subir), PRESERVAR LOCAL
+        if (localHasData && !remoteHasData) {
+          // Mantener local
+        } else if (remoteTime >= localTime) {
           if (JSON.stringify(remoteSlot) !== JSON.stringify(localSlot)) {
             this.data.slots[slotId] = remoteSlot;
             hasChanges = true;
@@ -421,6 +438,22 @@ const Store = {
     if (hasChanges) {
       localStorage.setItem("cabina_equipos_db", JSON.stringify(this.data));
       this.notify();
+    }
+
+    // Mostrar banner de aviso si este móvil tiene equipos locales pendientes de subir a GitHub
+    if (typeof window !== "undefined") {
+      const banner = document.getElementById("pending-local-upload-banner");
+      const bannerText = document.getElementById("pending-local-upload-text");
+      if (banner) {
+        if (localPendingSlots.length > 0) {
+          banner.style.display = "flex";
+          if (bannerText) {
+            bannerText.textContent = `📱 Tienes ${localPendingSlots.length} hueco(s) guardados en este móvil (${localPendingSlots.slice(0, 4).join(", ")}${localPendingSlots.length > 4 ? '...' : ''}) pendientes de subir a GitHub.`;
+          }
+        } else {
+          banner.style.display = "none";
+        }
+      }
     }
   },
 
