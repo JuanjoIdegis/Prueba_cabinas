@@ -166,6 +166,34 @@ body {
   font-family: var(--font-mono);
 }
 
+.build-badge {
+  font-size: 0.65rem !important;
+  padding: 0.12rem 0.5rem !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  border-radius: var(--radius-full) !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.build-badge:hover {
+  background: rgba(16, 185, 129, 0.3) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  transform: scale(1.04);
+}
+
+.build-badge:active {
+  transform: scale(0.96);
+}
+
 .brand-info p {
   font-size: 0.78rem;
   color: var(--text-muted);
